@@ -20,3 +20,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+    if "runserver" in sys.argv:
+        from backend.utils import import_semlor_from_csv
+        import_semlor_from_csv()
