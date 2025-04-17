@@ -9,6 +9,7 @@ class Semla(models.Model):
     vegan = models.BooleanField(default=False)
     price = models.DecimalField(max_digits=5, decimal_places=2)
     kind = models.CharField(max_length=255)
+    rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
     def __str__(self):
         return f"{self.bakery} - {self.city} - {self.kind}"
 class Ratings(models.Model):

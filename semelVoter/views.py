@@ -2,6 +2,7 @@ from django.shortcuts import render
 from .models import Semla, Ratings
 from rest_framework.response import Response
 from .serializers import SemlaSerializer, CommentSerializer
+from .utils import updateSemelRating
 
 # Create your views here.
 from rest_framework.views import APIView
@@ -14,10 +15,13 @@ class SelmaViewList(APIView):
 class RateSemlaView(APIView):
     def post(self, request, pk):
         semla = Semla.objects.get(pk=pk)
+        rating = request.data.get('rating')
+        old_ratings = semla.ratings.all()
+        updateSemelRating(semla, old_ratings,rating)
         comment = request.data.get('comment')
         rating = Ratings(
             semla=semla,
-            rating=request.data.get('rating'),
+            rating=rating,
             comment=comment if comment and comment != '' else None,
             )
         rating.save()
