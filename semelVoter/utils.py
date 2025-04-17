@@ -17,7 +17,7 @@ def import_semlor_from_csv():
             bakery = row['Bakery']
             city = row['City']
             picture = row['Picture']
-            vegan = row['Vegan'].lower() != 'false'
+            vegan = row['Vegan'].lower() == 't'
             price = row['Price'].replace(',', '.')
             kind = row['Kind']
 

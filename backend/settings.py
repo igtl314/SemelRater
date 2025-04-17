@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'semelVoter.apps.SemelvoterConfig', 
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
