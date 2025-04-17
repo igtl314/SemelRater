@@ -1,0 +1,68 @@
+# === Python Virtual Environment ===
+Include/
+Lib/
+Scripts/
+pyvenv.cfg
+
+# === Python / Django ===
+*.py[cod]
+__pycache__/
+*.pyo
+*.pyd
+*.pyc
+*.pyd
+*.pdb
+
+# Django-specific
+db.sqlite3
+*.log
+*.pot
+*.mo
+*.db
+*.sqlite3
+*.pyc
+.env
+
+# Django migrations
+**/migrations/
+**/migrations/*.py
+**/migrations/*.pyc
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml
+
+# Testing
+.tox/
+.pytest_cache/
+
+# === Node.js / Next.js (frontend) ===
+frontend/node_modules/
+frontend/.next/
+frontend/.turbo/
+frontend/.eslintcache
+frontend/package-lock.json
+frontend/yarn.lock
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# === Common tools ===
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# === Build outputs ===
+dist/
+build/
+
+# === Logs ===
+*.log
+
+# === Optional ===
+*.local
+*.bak
+*.swp
