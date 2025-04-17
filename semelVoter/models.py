@@ -14,7 +14,6 @@ class Semla(models.Model):
 class Ratings(models.Model):
     semla = models.ForeignKey(Semla, on_delete=models.CASCADE, related_name='ratings')
     rating = models.IntegerField()
-    comment = models.TextField()
-
+    comment = models.TextField(null=True, blank=True)
     def __str__(self):
         return f"{self.semla.bakery} - {self.rating}"
