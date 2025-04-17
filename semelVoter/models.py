@@ -7,9 +7,8 @@ class Semla(models.Model):
     city = models.CharField(max_length=255)
     picture = models.CharField(max_length=255, default='/images/')  # Will store as /images/user-input
     vegan = models.BooleanField(default=False)
-    price = models.DecimalField(max_digits=3, decimal_places=2)
+    price = models.DecimalField(max_digits=5, decimal_places=2)
     kind = models.CharField(max_length=255)
-
     def __str__(self):
         return f"{self.bakery} - {self.city}"
 class Ratings(models.Model):

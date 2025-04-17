@@ -14,12 +14,26 @@ def import_semlor_from_csv():
         reader = csv.DictReader(csvfile, delimiter=';')
         print("read csv file")
         for row in reader:
-            # Use get_or_create to avoid duplicate,s
+            bakery = row['Bakery']
+            city = row['City']
+            picture = row['Picture']
+            vegan = row['Vegan'].lower() != 'false'
+            price = row['Price'].replace(',', '.')
+            kind = row['Kind']
+
             print(f"Processing row: {row}")
-            selma = Semla(bakery=row['Bakery'],
-                          city=row['City'],
-                          picture=row['Picture'],
-                          vegan=row['Vegan'].lower() != 'false',  # Convert string to boolean
-                          price=row['Price'],
-                          kind=row['Kind'])
-            selma.save()
+            selma, created = Semla.objects.get_or_create(
+                bakery=bakery,
+                city=city,
+                kind=kind,
+                defaults={
+                    'picture': picture,
+                    'vegan': vegan,
+                    'price': price,
+                })       
+            if created:
+                print(f"Created new Semla: {selma}")
+            else:
+                print(f"Semla already exists: {selma}"        
+            )
+            
