@@ -36,10 +36,3 @@ def import_semlor_from_csv():
             else:
                 print(f"Semla already exists: {selma}"        
             )
-def updateSemelRating(semla, old_ratings, new_rating):
-    """
-    Update the Semla rating based on the old and new ratings.
-    """
-    semla.rating = (sum([int(rating.rating) for rating in old_ratings]) + int(new_rating)) / (len(old_ratings) + 1)
-
-    semla.save()
