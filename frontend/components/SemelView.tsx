@@ -5,12 +5,19 @@ import { useState } from "react";
 import { SemelModal } from "./SemelModal";
 import { useDisclosure } from "@heroui/modal";
 import { useSemelComments } from "@/app/_actions/GetSemelComments";
+import { CommentModal } from "./CommentModal";
 
 export function SemelView({ semelArray }: { semelArray: Semel[] }) {
   const [semelModalContent, setSemelModalContent] = useState<Semel | null>(
     null
   );
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const {
+    isOpen: isCommentOpen,
+    onOpen: onCommentOpen,
+    onOpenChange: onCommentOpenChange,
+  } = useDisclosure(); // Add this line
+
   const { ratings, isLoading, isError } = useSemelComments(
     semelModalContent?.id || 0
   );
@@ -26,6 +33,11 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
     onOpen();
   };
 
+  const handleCommentModal = (semel: Semel) => {
+    setSemelModalContent(semel);
+    onCommentOpen();
+  };
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {semelArray.length > 0 ? (
@@ -34,6 +46,7 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
             key={semel.id}
             semel={semel}
             setModalContent={handleModalContent}
+            openCommentModal={handleCommentModal}
           />
         ))
       ) : (
@@ -45,6 +58,13 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
           isOpen={isOpen}
           onOpenChange={onOpenChange}
           SemelComments={comments}
+        />
+      )}
+      {semelModalContent && (
+        <CommentModal
+          semel={semelModalContent}
+          isOpen={isCommentOpen}
+          onOpenChange={onCommentOpenChange}
         />
       )}
     </div>

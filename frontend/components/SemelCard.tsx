@@ -5,9 +5,11 @@ import { Button } from "@heroui/button";
 export function SemelCard({
   semel,
   setModalContent,
+  openCommentModal,
 }: {
   semel: Semel;
   setModalContent: (semel: Semel) => void;
+  openCommentModal: (semel: Semel) => void;
 }) {
   return (
     <Card className="w-64 h-96 flex flex-col justify-between">
@@ -19,9 +21,12 @@ export function SemelCard({
         <p>{semel.price}</p>
         <p>{semel.rating}/5</p>
       </CardBody>
-      <CardFooter className="flex justify-end">
+      <CardFooter className="grid grid-cols-2 gap-2">
         <Button color="primary" onPress={() => setModalContent(semel)}>
           View Details
+        </Button>
+        <Button color="secondary" onPress={() => openCommentModal(semel)}>
+          Add Review
         </Button>
       </CardFooter>
     </Card>
