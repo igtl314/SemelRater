@@ -20,4 +20,8 @@ export type Rating = {
   rating: number;
   date: string;
 }
-
+export type SemelContextType = {
+  semels: Semel[];
+  isLoading: boolean;
+  error: any;
+}

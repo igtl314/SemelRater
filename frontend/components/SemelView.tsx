@@ -9,7 +9,7 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
           <SemelCard key={semel.id} semel={semel} />
         ))
       ) : (
-        <Spinner />
+        <Spinner className="col-span-full" />
       )}
     </div>
   );
