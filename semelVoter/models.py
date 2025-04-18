@@ -46,6 +46,9 @@ class RatingTracker(models.Model):
         
     @classmethod
     def get_today_count(cls, ip_address, user_agent):
+        """
+        Get the count of ratings for today for a specific IP address and user agent.
+        """
         today = date.today()
         try:
             tracker = cls.objects.get(
@@ -59,6 +62,9 @@ class RatingTracker(models.Model):
             
     @classmethod
     def increment_count(cls, ip_address, user_agent):
+        """
+        Increment the count for today's date for a specific IP address and user agent.
+        """
         today = date.today()
         tracker, created = cls.objects.get_or_create(
             ip_address=ip_address,

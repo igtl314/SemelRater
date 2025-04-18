@@ -11,17 +11,20 @@ import { Semel, SemelRatingsFetch } from "@/types";
 
 export function SemelView({ semelArray }: { semelArray: Semel[] }) {
   const [semelModalContent, setSemelModalContent] = useState<Semel | null>(
-    null,
+    null
   );
+  // Modal for viewing Semel details
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  // Modal for adding comments
   const {
     isOpen: isCommentOpen,
     onOpen: onCommentOpen,
     onOpenChange: onCommentOpenChange,
   } = useDisclosure(); // Add this line
 
+  // Fetch comments for a specific Semel
   const { ratings, isLoading, isError } = useSemelComments(
-    semelModalContent?.id || 0,
+    semelModalContent?.id || 0
   );
 
   const comments: SemelRatingsFetch = {
@@ -30,11 +33,12 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
     isError,
   };
 
+  // Function to handle the chosen Semel and open the modal
   const handleModalContent = (semel: Semel) => {
     setSemelModalContent(semel);
     onOpen();
   };
-
+  // Function to handle the chosen Semel and open the new comment modal
   const handleCommentModal = (semel: Semel) => {
     setSemelModalContent(semel);
     onCommentOpen();
@@ -42,6 +46,7 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Display all Semlor as SemelCard*/}
       {semelArray.length > 0 ? (
         semelArray.map((semel: Semel) => (
           <SemelCard
@@ -54,6 +59,7 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
       ) : (
         <Spinner className="col-span-full" />
       )}
+      {/* Model for viewing ratings and comment*/}
       {semelModalContent && (
         <SemelModal
           Semel={semelModalContent}
@@ -62,6 +68,7 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
           onOpenChange={onOpenChange}
         />
       )}
+      {/* Modal for adding comments */}
       {semelModalContent && (
         <CommentModal
           isOpen={isCommentOpen}

@@ -10,6 +10,9 @@ from rest_framework import status
 
 class SelmaViewList(APIView):
     def get(self, request):
+        """
+        Get all Semlor.
+        """
         try:
             semlor = Semla.objects.all()
             serializer = SemlaSerializer(semlor, many=True)
@@ -21,6 +24,9 @@ class SelmaViewList(APIView):
             )
 class RateSemlaView(APIView):
     def post(self, request, pk):
+        """
+        Rate a specific Semla.
+        """
         # Get IP address and user agent
         ip_address = self.get_client_ip(request)
         user_agent = request.META.get('HTTP_USER_AGENT', '')
@@ -62,6 +68,9 @@ class RateSemlaView(APIView):
     
 class SemlaCommentView(APIView):
     def get(self, request, pk):
+        """
+        Get all comments for a specific Semla.
+        """
         try:
             comments = Ratings.get_semel_rating(pk)
             serializer = CommentSerializer(comments, many=True)
