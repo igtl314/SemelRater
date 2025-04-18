@@ -3,7 +3,13 @@ import { Card, CardBody, CardFooter } from "@heroui/card";
 import { SemelImage } from "./SemelImage";
 import { Button } from "@heroui/button";
 
-export function SemelCard({ semel }: { semel: Semel }) {
+export function SemelCard({
+  semel,
+  setModalContent,
+}: {
+  semel: Semel;
+  setModalContent: (semel: Semel) => void;
+}) {
   return (
     <Card className="w-64 h-96 flex flex-col justify-between">
       <SemelImage src={semel.picture} />
@@ -15,10 +21,7 @@ export function SemelCard({ semel }: { semel: Semel }) {
         <p>{semel.rating}</p>
       </CardBody>
       <CardFooter className="flex justify-end">
-        <Button
-          color="primary"
-          onPress={() => alert(`You clicked on ${semel.kind}`)}
-        >
+        <Button color="primary" onPress={() => setModalContent(semel)}>
           View Details
         </Button>
       </CardFooter>

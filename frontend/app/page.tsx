@@ -25,12 +25,8 @@ export default function Home() {
       )}
       <div className=" grid grid-row-2 gap-4 border-b-2 border-b-gray-300 pb-4">
         <p className="text-xl">Top 3 Semlor</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {semels.slice(0, 3).map((semel) => (
-            <div key={semel.id} className="flex items-center gap-2">
-              <SemelCard semel={semel} />
-            </div>
-          ))}
+        <div className="">
+          <SemelView semelArray={semels.slice(0, 3)} />
         </div>
       </div>
       <SemelView semelArray={semels} />
