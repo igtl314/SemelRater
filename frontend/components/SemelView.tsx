@@ -10,14 +10,19 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
   const [semelModalContent, setSemelModalContent] = useState<Semel | null>(
     null
   );
-  const [semelComments, setSemelComments] = useState<SemelRatingsFetch | null>(
-    null
-  );
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { ratings, isLoading, isError } = useSemelComments(
+    semelModalContent?.id || 0
+  );
+
+  const comments: SemelRatingsFetch = {
+    ratings: semelModalContent ? ratings : [],
+    isLoading,
+    isError,
+  };
 
   const handleModalContent = (semel: Semel) => {
     setSemelModalContent(semel);
-    setSemelComments(useSemelComments(semel.id));
     onOpen();
   };
 
@@ -39,7 +44,7 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
           Semel={semelModalContent}
           isOpen={isOpen}
           onOpenChange={onOpenChange}
-          SemelComments={semelComments}
+          SemelComments={comments}
         />
       )}
     </div>
