@@ -2,7 +2,6 @@ import { Semel } from "@/types";
 import { Card, CardBody, CardFooter } from "@heroui/card";
 import { SemelImage } from "./SemelImage";
 import { Button } from "@heroui/button";
-
 export function SemelCard({
   semel,
   setModalContent,
@@ -18,7 +17,7 @@ export function SemelCard({
         <p>{semel.bakery}</p>
         <p>{semel.city}</p>
         <p>{semel.price}</p>
-        <p>{semel.rating}</p>
+        <p>{semel.rating}/5</p>
       </CardBody>
       <CardFooter className="flex justify-end">
         <Button color="primary" onPress={() => setModalContent(semel)}>

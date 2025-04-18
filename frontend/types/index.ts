@@ -14,14 +14,20 @@ export type Semel = {
   kind: string;
   rating: number;
 };
+export type SemelContextType = {
+  semels: Semel[];
+  isLoading: boolean;
+  error: any;
+}
 
 export type Rating = {
   comment: string;
   rating: number;
   date: string;
 }
-export type SemelContextType = {
-  semels: Semel[];
+
+export type SemelRatingsFetch = {
+  ratings: Rating[];
   isLoading: boolean;
-  error: any;
+  isError: any;
 }

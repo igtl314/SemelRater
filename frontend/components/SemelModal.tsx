@@ -1,6 +1,6 @@
 import { Modal, ModalBody, ModalFooter, ModalContent } from "@heroui/modal";
 import { Button } from "@heroui/button";
-import { Semel } from "@/types";
+import { Semel, SemelRatingsFetch } from "@/types";
 import { SemelImage } from "./SemelImage";
 
 export function SemelModal({
@@ -11,6 +11,7 @@ export function SemelModal({
   Semel: Semel;
   isOpen: boolean;
   onOpenChange: () => void;
+  SemelComments: SemelRatingsFetch | null;
 }) {
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
