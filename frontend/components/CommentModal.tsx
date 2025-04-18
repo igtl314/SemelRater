@@ -2,10 +2,11 @@
 import { useState } from "react";
 import { Modal, ModalBody, ModalFooter, ModalContent } from "@heroui/modal";
 import { Button } from "@heroui/button";
-import { Semel } from "@/types";
 import { Input, Textarea } from "@heroui/input";
 import { Spinner } from "@heroui/spinner";
 import { useContext } from "react";
+
+import { Semel } from "@/types";
 import { SemelContext } from "@/app/SemelProvider";
 
 export function CommentModal({
@@ -29,6 +30,7 @@ export function CommentModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -46,7 +48,7 @@ export function CommentModal({
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/rate/${semel.id}`,
+        `http://${process.env.NEXT_PUBLIC_IP_KEY}/api/rate/${semel.id}`,
         {
           method: "POST",
           headers: {
@@ -66,7 +68,6 @@ export function CommentModal({
         setFormData({ rating: "", comment: "" });
       }
     } catch (error) {
-      console.error("Error submitting comment:", error);
       setMessage("Failed to submit comment. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -74,36 +75,41 @@ export function CommentModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={handleModalClose}>
+    <Modal
+      isOpen={isOpen}
+      placement="top"
+      size="lg"
+      onOpenChange={handleModalClose}
+    >
       <ModalContent>
         {(onClose) => (
           <>
             <ModalBody className="flex flex-col gap-4">
               <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
                 <Input
-                  name="rating"
-                  type="number"
-                  label="Rating"
                   isRequired
-                  min={1}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  label="Rating"
                   max={5}
+                  min={1}
+                  name="rating"
+                  placeholder="1-5"
+                  type="number"
                   value={formData.rating}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  placeholder="1-5"
                 />
                 <Textarea
-                  name="comment"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   label="Comment"
+                  name="comment"
+                  placeholder="Write your comment here..."
                   rows={2}
                   value={formData.comment}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  placeholder="Write your comment here..."
                 />
 
-                <Button type="submit" color="primary" disabled={isSubmitting}>
-                  {isSubmitting ? <Spinner size="sm" className="mr-2" /> : null}
+                <Button color="primary" disabled={isSubmitting} type="submit">
+                  {isSubmitting ? <Spinner className="mr-2" size="sm" /> : null}
                   Add Review
                 </Button>
               </form>

@@ -1,15 +1,17 @@
-import { Semel, SemelRatingsFetch } from "@/types";
-import { SemelCard } from "./SemelCard";
 import { Spinner } from "@heroui/spinner";
 import { useState } from "react";
-import { SemelModal } from "./SemelModal";
 import { useDisclosure } from "@heroui/modal";
-import { useSemelComments } from "@/app/_actions/GetSemelComments";
+
+import { SemelModal } from "./SemelModal";
+import { SemelCard } from "./SemelCard";
 import { CommentModal } from "./CommentModal";
+
+import { useSemelComments } from "@/app/_actions/GetSemelComments";
+import { Semel, SemelRatingsFetch } from "@/types";
 
 export function SemelView({ semelArray }: { semelArray: Semel[] }) {
   const [semelModalContent, setSemelModalContent] = useState<Semel | null>(
-    null
+    null,
   );
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const {
@@ -19,7 +21,7 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
   } = useDisclosure(); // Add this line
 
   const { ratings, isLoading, isError } = useSemelComments(
-    semelModalContent?.id || 0
+    semelModalContent?.id || 0,
   );
 
   const comments: SemelRatingsFetch = {
@@ -44,9 +46,9 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
         semelArray.map((semel: Semel) => (
           <SemelCard
             key={semel.id}
+            openCommentModal={handleCommentModal}
             semel={semel}
             setModalContent={handleModalContent}
-            openCommentModal={handleCommentModal}
           />
         ))
       ) : (
@@ -55,15 +57,15 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
       {semelModalContent && (
         <SemelModal
           Semel={semelModalContent}
+          SemelComments={comments}
           isOpen={isOpen}
           onOpenChange={onOpenChange}
-          SemelComments={comments}
         />
       )}
       {semelModalContent && (
         <CommentModal
-          semel={semelModalContent}
           isOpen={isCommentOpen}
+          semel={semelModalContent}
           onOpenChange={onCommentOpenChange}
         />
       )}

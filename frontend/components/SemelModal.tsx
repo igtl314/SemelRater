@@ -1,9 +1,11 @@
 import { Modal, ModalBody, ModalFooter, ModalContent } from "@heroui/modal";
 import { Button } from "@heroui/button";
-import { Semel, SemelRatingsFetch } from "@/types";
-import { SemelImage } from "./SemelImage";
 import { Spinner } from "@heroui/spinner";
+
+import { SemelImage } from "./SemelImage";
 import { Comment } from "./Comment";
+
+import { Semel, SemelRatingsFetch } from "@/types";
 
 export function SemelModal({
   Semel,
@@ -16,7 +18,6 @@ export function SemelModal({
   onOpenChange: () => void;
   SemelComments: SemelRatingsFetch;
 }) {
-  console.log("Commensts", SemelComments);
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
       <ModalContent>
@@ -24,7 +25,7 @@ export function SemelModal({
           <>
             <ModalBody className="flex flex-col gap-4">
               <SemelImage src={Semel.picture} />
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 overflow-y-scroll h-4/5 max-h-64">
                 {SemelComments.isLoading ? (
                   <Spinner />
                 ) : SemelComments.ratings?.length === 0 ? (

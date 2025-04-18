@@ -3,6 +3,7 @@
 import { createContext, useEffect, useState } from "react";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
+
 import { Semel, SemelContextType } from "@/types";
 
 export const SemelContext = createContext<SemelContextType>({
@@ -22,12 +23,12 @@ export const SemelProvider = ({ children }: { children: React.ReactNode }) => {
     }).then((res) => res.json());
 
   const { data, error, isLoading } = useSWR(
-    "http://localhost:8000/api/semlor",
-    fetcher
+    `http://${process.env.NEXT_PUBLIC_IP_KEY}/api/semlor`,
+    fetcher,
   );
   const { trigger: refreshSemels } = useSWRMutation(
-    "http://localhost:8000/api/semlor",
-    fetcher
+    `http://${process.env.NEXT_PUBLIC_IP_KEY}/api/semlor`,
+    fetcher,
   );
 
   useEffect(() => {

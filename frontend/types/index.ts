@@ -19,24 +19,24 @@ export type SemelContextType = {
   isLoading: boolean;
   error: any;
   refreshSemels: () => void;
-}
+};
 
 export type Rating = Comment & {
   date: string;
-}
+};
 export type Comment = {
   comment: string;
   rating: number;
   semelId: number;
-}
+};
 
 export type SemelRatingsFetch = {
   ratings: Rating[];
   isLoading: boolean;
   isError: any;
-}
+};
 
 export type CommentResponse = {
   httpStatus: number;
   message: string;
-}
+};

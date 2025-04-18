@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-@zl&)vvl@6@ojrwwsq$94&qbv%9as20i3nie(*gj^#$xfw8u2!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["192.168.86.30", "semlor.mardo.dev"]
 
 
 # Application definition

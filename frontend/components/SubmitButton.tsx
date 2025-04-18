@@ -9,9 +9,9 @@ export function SubmitButton({ text }: { text: string }) {
   return (
     <Button
       // className="border border-sky-500 rounded-md p-2 bg-sky-500 text-white hover:bg-sky-700 hover:text-sky-50 "
-      type="submit"
       aria-disabled={pending}
       color="primary"
+      type="submit"
     >
       {pending ? <Spinner /> : text}
     </Button>
