@@ -1,18 +1,20 @@
 import { Semel } from "@/types";
 import { SemelCard } from "./SemelCard";
 import { Spinner } from "@heroui/spinner";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { SemelModal } from "./SemelModal";
 import { useDisclosure } from "@heroui/modal";
+
 export function SemelView({ semelArray }: { semelArray: Semel[] }) {
   const [semelModalContent, setSemelModalContent] = useState<Semel | null>(
     null
   );
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
-  useEffect(() => {
+  const handleModalContent = (semel: Semel) => {
+    setSemelModalContent(semel);
     onOpen();
-  }, [semelModalContent]);
+  };
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -21,7 +23,7 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
           <SemelCard
             key={semel.id}
             semel={semel}
-            setModalContent={setSemelModalContent}
+            setModalContent={handleModalContent}
           />
         ))
       ) : (
