@@ -5,6 +5,8 @@ import { Button } from "@heroui/button";
 import { Semel } from "@/types";
 import { Input, Textarea } from "@heroui/input";
 import { Spinner } from "@heroui/spinner";
+import { useContext } from "react";
+import { SemelContext } from "@/app/SemelProvider";
 
 export function CommentModal({
   semel,
@@ -21,6 +23,7 @@ export function CommentModal({
     rating: "",
     comment: "",
   });
+  const ctx = useContext(SemelContext);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -29,10 +32,17 @@ export function CommentModal({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleModalClose = () => {
+    setFormData({ rating: "", comment: "" });
+    setMessage("");
+    onOpenChange();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage("");
+    ctx.refreshSemels();
 
     try {
       const response = await fetch(
@@ -65,7 +75,7 @@ export function CommentModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Modal isOpen={isOpen} onOpenChange={handleModalClose}>
       <ModalContent>
         {(onClose) => (
           <>

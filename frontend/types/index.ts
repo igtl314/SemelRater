@@ -18,6 +18,7 @@ export type SemelContextType = {
   semels: Semel[];
   isLoading: boolean;
   error: any;
+  refreshSemels: () => void;
 }
 
 export type Rating = Comment & {

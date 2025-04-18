@@ -2,7 +2,6 @@
 import { useContext, useEffect, useState } from "react";
 import { SemelContext } from "@/app/SemelProvider";
 import { Semel } from "@/types";
-import { SemelCard } from "@/components/SemelCard";
 import { SemelView } from "@/components/SemelView";
 import { Spinner } from "@heroui/spinner";
 
@@ -15,7 +14,8 @@ export default function Home() {
       (a, b) => (b.rating ?? 0) - (a.rating ?? 0)
     );
     setSemels(sorted);
-  }, [ctx]);
+    console.log("Semels sorted:", sorted);
+  }, [ctx.semels]);
   return (
     <section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
       {ctx.isLoading && (
