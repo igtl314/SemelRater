@@ -60,9 +60,8 @@ export function CommentModal({
       );
 
       const data = await response.json();
-      setMessage(data.message || "Comment submitted successfully");
 
-      // Optional: Reset form after successful submission
+      setMessage(data.error ? data.error : "Comment submitted successfully!");
       if (response.ok) {
         setFormData({ rating: "", comment: "" });
       }
@@ -93,7 +92,6 @@ export function CommentModal({
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   placeholder="1-5"
                 />
-
                 <Textarea
                   name="comment"
                   label="Comment"
@@ -111,7 +109,7 @@ export function CommentModal({
               </form>
             </ModalBody>
             <ModalFooter className="flex justify-between">
-              <p className={message ? "text-green-600" : "hidden"}>{message}</p>
+              <p className={message ? "" : "hidden"}>{message}</p>
               <Button color="danger" onPress={onClose}>
                 Close
               </Button>
