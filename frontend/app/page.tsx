@@ -12,6 +12,7 @@ import { useContext, useEffect, useState } from "react";
 import { SemelContext } from "@/app/SemelProvider";
 import { Semel } from "@/types";
 import { SemelCard } from "@/components/SemelCard";
+import { SemelView } from "@/components/SemelView";
 
 export default function Home() {
   const [semels, setSemels] = useState<Semel[]>([]);
@@ -33,11 +34,7 @@ export default function Home() {
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {semels.map((semel) => (
-          <SemelCard key={semel.id} semel={semel} />
-        ))}
-      </div>
+      <SemelView semelArray={semels} />
     </section>
   );
 }
