@@ -10,7 +10,7 @@ export type Semel = {
   city: string;
   picture: string;
   vegan: boolean;
-  price: number;
+  price: string;
   kind: string;
   rating: number;
 };

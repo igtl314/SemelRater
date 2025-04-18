@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 class SelmaViewList(APIView):
-    def get(self,request):
+    def get(self, request):
         try:
             semlor = Semla.objects.all()
             serializer = SemlaSerializer(semlor, many=True)
@@ -19,7 +19,6 @@ class SelmaViewList(APIView):
                 {"error": "No Semlor where found"}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-    
 class RateSemlaView(APIView):
     def post(self, request, pk):
         # Get IP address and user agent
