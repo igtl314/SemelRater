@@ -11,7 +11,7 @@ import { Semel, SemelRatingsFetch } from "@/types";
 
 export function SemelView({ semelArray }: { semelArray: Semel[] }) {
   const [semelModalContent, setSemelModalContent] = useState<Semel | null>(
-    null
+    null,
   );
   // Modal for viewing Semel details
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -24,7 +24,7 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
 
   // Fetch comments for a specific Semel
   const { ratings, isLoading, isError } = useSemelComments(
-    semelModalContent?.id || 0
+    semelModalContent?.id || 0,
   );
 
   const comments: SemelRatingsFetch = {

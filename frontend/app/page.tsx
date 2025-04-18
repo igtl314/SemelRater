@@ -14,8 +14,9 @@ export default function Home() {
   // Sort the semels by rating in descending order
   useEffect(() => {
     const sorted = [...ctx.semels].sort(
-      (a, b) => (b.rating ?? 0) - (a.rating ?? 0)
+      (a, b) => (b.rating ?? 0) - (a.rating ?? 0),
     );
+
     setSemels(sorted);
   }, [ctx.semels]);
 
