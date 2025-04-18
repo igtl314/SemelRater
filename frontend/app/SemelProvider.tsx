@@ -7,21 +7,17 @@ import { Semel } from "@/types";
 export const SemelContext = createContext<Semel[]>([]);
 export const SemelProvider = ({ children }: { children: React.ReactNode }) => {
   const [semels, setSemels] = useState<Semel[]>([]);
-  const fetcher = (url: string): Promise<any[]> =>
+  const fetcher = (url: string): Promise<Semel[]> =>
     fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
     }).then((res) => res.json());
-  const { data, error } = useSWR(
-    "http://localhost:8000/api/semlor", // Try localhost instead of 127.0.0.1
-    fetcher
-  );
+  const { data, error } = useSWR("http://localhost:8000/api/semlor", fetcher);
 
   useEffect(() => {
     if (data) {
-      console.log("data", data);
       setSemels(data);
     }
   }, [data, error]);
