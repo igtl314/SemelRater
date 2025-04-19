@@ -36,6 +36,10 @@ WORKDIR /app
  
 # Copy application code
 COPY --chown=appuser:appuser . .
+RUN mkdir -p /app/data && \
+    touch /app/data/db.sqlite3 && \
+    chown -R appuser:appuser /app/data && \
+    chmod 664 /app/data/db.sqlite3
  
 # Set environment variables to optimize Python
 ENV PYTHONDONTWRITEBYTECODE=1
