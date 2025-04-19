@@ -27,7 +27,7 @@ export function CommentModal({
   const ctx = useContext(SemelContext);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
 
@@ -58,7 +58,7 @@ export function CommentModal({
             comment: formData.comment,
             rating: parseInt(formData.rating),
           }),
-        }
+        },
       );
 
       const data = await response.json();

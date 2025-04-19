@@ -11,7 +11,7 @@ export function useSemelComments(id: number): SemelRatingsFetch {
   const fetcher = (url: string) => fetch(url).then((res) => res.json());
   const { data, error, isLoading } = useSWR<Rating[]>(
     `https://${process.env.NEXT_PUBLIC_IP_ADRESS}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/api/comments/${id}`,
-    fetcher
+    fetcher,
   );
 
   useEffect(() => {
