@@ -43,6 +43,7 @@ ENV PYTHONUNBUFFERED=1
 
 RUN python manage.py makemigrations 
 RUN python manage.py migrate
+RUN python manage.py import_semlor
  
 # Switch to non-root user
 USER appuser
