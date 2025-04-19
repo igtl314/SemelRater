@@ -6,8 +6,6 @@ services:
     container_name: backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./db.sqlite3:/app/db.sqlite3
   frontend:
     build:
       context: ./frontend
