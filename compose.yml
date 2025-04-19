@@ -14,6 +14,6 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "3000:3000"
+      - "3005:3000"
     depends_on:
       - backend
