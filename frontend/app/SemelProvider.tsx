@@ -23,11 +23,11 @@ export const SemelProvider = ({ children }: { children: React.ReactNode }) => {
     }).then((res) => res.json());
 
   const { data, error, isLoading } = useSWR(
-    `http://192.168.86.30:8000/api/semlor`,
+    `https://${process.env.NEXT_PUBLIC_IP_ADRESS}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/api/semlor`,
     fetcher
   );
   const { trigger: refreshSemels } = useSWRMutation(
-    `http://192.168.86.30:8000/api/semlor`,
+    `https://${process.env.NEXT_PUBLIC_IP_ADRESS}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/api/semlor`,
     fetcher
   );
 

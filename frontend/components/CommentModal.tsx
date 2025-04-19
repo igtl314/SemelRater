@@ -48,7 +48,7 @@ export function CommentModal({
 
     try {
       const response = await fetch(
-        `http://192.168.86.30:8000/api/rate/${semel.id}`,
+        `https://${process.env.NEXT_PUBLIC_IP_ADRESS}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/api/rate/${semel.id}`,
         {
           method: "POST",
           headers: {
