@@ -40,6 +40,9 @@ COPY --chown=appuser:appuser . .
 # Set environment variables to optimize Python
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1 
+
+RUN python manage.py makemigrations 
+RUN python manage.py migrate
  
 # Switch to non-root user
 USER appuser
