@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-@zl&)vvl@6@ojrwwsq$94&qbv%9as20i3nie(*gj^#$xfw8u2!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["192.168.86.30", "semlor.mardo.dev", "localhost", "127.0.0.1", 'api.mardo.dev']
+ALLOWED_HOSTS = ["192.168.86.30", "semlor.mardo.dev", "localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -97,7 +97,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'data' / 'db.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
