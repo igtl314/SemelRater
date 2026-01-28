@@ -1,3 +1,4 @@
+import django
 from django.db import models
 from datetime import date
 # Create your models here.
@@ -26,7 +27,7 @@ class Ratings(models.Model):
     semla = models.ForeignKey(Semla, on_delete=models.CASCADE, related_name='ratings')
     rating = models.IntegerField()
     comment = models.TextField(null=True, blank=True)
-    date = models.DateField(default=date.today())
+    date = models.DateField(default=django.utils.timezone.now)
     def __str__(self):
         return f"{self.semla.bakery} - {self.rating}"
     @classmethod
@@ -38,7 +39,7 @@ class Ratings(models.Model):
 class RatingTracker(models.Model):
     ip_address = models.CharField(max_length=45)  # IPv6 can be long
     user_agent = models.TextField()
-    date = models.DateField(default=date.today)
+    date = models.DateField(default=django.utils.timezone.now)
     count = models.PositiveIntegerField(default=1)
     
     class Meta:
