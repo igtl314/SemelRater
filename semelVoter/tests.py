@@ -316,3 +316,40 @@ class TestSemlaCreationTracker:
         assert SemlaCreationTracker.get_today_count('192.168.1.1', 'Agent1') == 2
         assert SemlaCreationTracker.get_today_count('192.168.1.2', 'Agent1') == 1
         assert SemlaCreationTracker.get_today_count('192.168.1.1', 'Agent2') == 0
+
+
+@pytest.mark.django_db
+class TestCreateSemlaDefaults:
+    """Test suite for verifying default values on created semla"""
+    
+    def test_new_semla_has_default_rating_zero(self, client):
+        """Test that newly created semla has rating of 0.00"""
+        data = {
+            'bakery': 'New Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        response = client.post('/api/semlor/create', data, content_type='application/json')
+        
+        assert response.status_code == 201
+        assert response.json()['rating'] == 0.00
+        
+        # Verify in database as well
+        semla = Semla.objects.get(pk=response.json()['id'])
+        assert semla.rating == Decimal('0.00')
+    
+    def test_rating_not_settable_on_creation(self, client):
+        """Test that rating cannot be set during creation (ignored if provided)"""
+        data = {
+            'bakery': 'Sneaky Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+            'rating': '5.00',  # Trying to set a high rating
+        }
+        response = client.post('/api/semlor/create', data, content_type='application/json')
+        
+        assert response.status_code == 201
+        # Rating should still be 0.00, not 5.00
+        assert response.json()['rating'] == 0.00
