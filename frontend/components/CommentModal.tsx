@@ -8,6 +8,7 @@ import { useContext } from "react";
 
 import { Semel } from "@/types";
 import { SemelContext } from "@/app/SemelProvider";
+import { rateSemel } from "@/app/actions/semel";
 
 export function CommentModal({
   semel,
@@ -44,28 +45,22 @@ export function CommentModal({
     e.preventDefault();
     setIsSubmitting(true);
     setMessage("");
-    ctx.refreshSemels();
 
     try {
-      const response = await fetch(
-        `https://${process.env.NEXT_PUBLIC_IP_ADRESS}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/api/rate/${semel.id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            comment: formData.comment,
-            rating: parseInt(formData.rating),
-          }),
-        },
+      const response = await rateSemel(
+        semel.id,
+        parseInt(formData.rating),
+        formData.comment,
       );
 
-      const data = await response.json();
-
-      setMessage(data.error ? data.error : "Comment submitted successfully!");
-      if (response.ok) {
+      setMessage(
+        response.httpStatus >= 400
+          ? response.message
+          : "Comment submitted successfully!",
+      );
+      if (response.httpStatus < 400) {
         setFormData({ rating: "", comment: "" });
+        ctx.refreshSemels();
       }
     } catch (error) {
       setMessage("Failed to submit comment. Please try again." + error);
