@@ -45,7 +45,7 @@ frontend/.env.test.local
 frontend/.env.production.local
 
 # === Common tools ===
-.vscode/
+
 .idea/
 .DS_Store
 Thumbs.db
