@@ -1,10 +1,9 @@
 "use client";
 
-import { createContext, useEffect, useState } from "react";
-import useSWR from "swr";
-import useSWRMutation from "swr/mutation";
+import { createContext, useEffect, useState, useCallback } from "react";
 
 import { Semel, SemelContextType } from "@/types";
+import { getSemels } from "@/app/actions/semel";
 
 export const SemelContext = createContext<SemelContextType>({
   semels: [],
@@ -12,30 +11,35 @@ export const SemelContext = createContext<SemelContextType>({
   error: null,
   refreshSemels: () => {},
 });
+
 export const SemelProvider = ({ children }: { children: React.ReactNode }) => {
   const [semels, setSemels] = useState<Semel[]>([]);
-  const fetcher = (url: string): Promise<Semel[]> =>
-    fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }).then((res) => res.json());
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<SemelContextType["error"]>(null);
 
-  const { data, error, isLoading } = useSWR(
-    `https://${process.env.NEXT_PUBLIC_IP_ADRESS}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/api/semlor`,
-    fetcher,
-  );
-  const { trigger: refreshSemels } = useSWRMutation(
-    `https://${process.env.NEXT_PUBLIC_IP_ADRESS}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/api/semlor`,
-    fetcher,
-  );
+  const fetchSemels = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await getSemels();
+
+      setSemels(data);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err : new Error("Failed to fetch semels"),
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const refreshSemels = useCallback(() => {
+    fetchSemels();
+  }, [fetchSemels]);
 
   useEffect(() => {
-    if (data) {
-      setSemels(data);
-    }
-  }, [data, error]);
+    fetchSemels();
+  }, [fetchSemels]);
 
   return (
     <SemelContext.Provider value={{ semels, isLoading, error, refreshSemels }}>

@@ -1,28 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import useSWR from "swr";
+import { useEffect, useState, useCallback } from "react";
 
 import { Rating, SemelRatingsFetch } from "@/types";
+import { getSemelRatings } from "@/app/actions/semel";
 
 export function useSemelComments(id: number): SemelRatingsFetch {
   const [ratings, setRatings] = useState<Rating[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState<Error | null>(null);
 
-  const fetcher = (url: string) => fetch(url).then((res) => res.json());
-  const { data, error, isLoading } = useSWR<Rating[]>(
-    `https://${process.env.NEXT_PUBLIC_IP_ADRESS}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/api/comments/${id}`,
-    fetcher,
-  );
+  const fetchComments = useCallback(async () => {
+    setIsLoading(true);
+    setIsError(null);
+    try {
+      const data = await getSemelRatings(id);
+
+      setRatings(data);
+    } catch (err) {
+      setIsError(
+        err instanceof Error ? err : new Error("Failed to fetch ratings"),
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
-    if (data) {
-      setRatings(data);
-    }
-  }, [data, error]);
+    fetchComments();
+  }, [fetchComments]);
 
   return {
     ratings: ratings,
     isLoading,
-    isError: error,
+    isError: isError,
   };
 }

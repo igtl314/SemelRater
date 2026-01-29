@@ -60,6 +60,7 @@ USER nextjs
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV BACKEND_URL=http://backend:8000
 
 
 # server.js is created by next build from the standalone output

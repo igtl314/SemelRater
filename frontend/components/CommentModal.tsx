@@ -8,6 +8,10 @@ import { useContext } from "react";
 
 import { Semel } from "@/types";
 import { SemelContext } from "@/app/SemelProvider";
+import { rateSemel } from "@/app/actions/semel";
+
+/** HTTP status code threshold for error responses */
+const HTTP_ERROR_THRESHOLD = 400;
 
 export function CommentModal({
   semel,
@@ -44,31 +48,25 @@ export function CommentModal({
     e.preventDefault();
     setIsSubmitting(true);
     setMessage("");
-    ctx.refreshSemels();
 
     try {
-      const response = await fetch(
-        `https://${process.env.NEXT_PUBLIC_IP_ADRESS}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/api/rate/${semel.id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            comment: formData.comment,
-            rating: parseInt(formData.rating),
-          }),
-        },
+      const response = await rateSemel(
+        semel.id,
+        parseInt(formData.rating),
+        formData.comment,
       );
 
-      const data = await response.json();
-
-      setMessage(data.error ? data.error : "Comment submitted successfully!");
-      if (response.ok) {
+      setMessage(
+        response.httpStatus >= HTTP_ERROR_THRESHOLD
+          ? response.message
+          : "Rating submitted successfully!",
+      );
+      if (response.httpStatus < HTTP_ERROR_THRESHOLD) {
         setFormData({ rating: "", comment: "" });
+        ctx.refreshSemels();
       }
-    } catch (error) {
-      setMessage("Failed to submit comment. Please try again." + error);
+    } catch {
+      setMessage("Failed to submit rating. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
