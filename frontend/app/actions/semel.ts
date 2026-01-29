@@ -57,7 +57,7 @@ export async function getSemelRatings(id: number): Promise<Rating[]> {
 export async function rateSemel(
   semelId: number,
   rating: number,
-  comment: string,
+  comment: string = "",
 ): Promise<CommentResponse> {
   try {
     const response = await fetch(`${BACKEND_URL}/api/rate/${semelId}`, {
