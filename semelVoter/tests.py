@@ -136,3 +136,72 @@ class TestCreateSemlaSerializer:
         serializer = CreateSemlaSerializer(data=data)
         assert not serializer.is_valid()
         assert 'price' in serializer.errors
+
+    def test_empty_strings_rejected(self):
+        """Test that empty strings are rejected for required string fields"""
+        base_data = {
+            'bakery': 'Test',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+        }
+        
+        # Empty bakery
+        data = {**base_data, 'bakery': ''}
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'bakery' in serializer.errors
+        
+        # Empty city
+        data = {**base_data, 'city': ''}
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'city' in serializer.errors
+        
+        # Empty kind
+        data = {**base_data, 'kind': ''}
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'kind' in serializer.errors
+
+    def test_whitespace_only_strings_rejected(self):
+        """Test that whitespace-only strings are rejected"""
+        base_data = {
+            'bakery': 'Test',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+        }
+        
+        # Whitespace-only bakery
+        data = {**base_data, 'bakery': '   '}
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'bakery' in serializer.errors
+        
+        # Whitespace-only city
+        data = {**base_data, 'city': '\t\n'}
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'city' in serializer.errors
+        
+        # Whitespace-only kind
+        data = {**base_data, 'kind': '  '}
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'kind' in serializer.errors
+
+    def test_strings_are_trimmed(self):
+        """Test that leading/trailing whitespace is trimmed from valid strings"""
+        data = {
+            'bakery': '  Valhallabageriet  ',
+            'city': ' Stockholm ',
+            'price': '45.00',
+            'kind': ' Traditional ',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert serializer.is_valid()
+        semla = serializer.save()
+        assert semla.bakery == 'Valhallabageriet'
+        assert semla.city == 'Stockholm'
+        assert semla.kind == 'Traditional'
