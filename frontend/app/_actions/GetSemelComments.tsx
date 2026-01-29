@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 
 import { Rating, SemelRatingsFetch } from "@/types";
-import { getSemelComments } from "@/app/actions/semel";
+import { getSemelRatings } from "@/app/actions/semel";
 
 export function useSemelComments(id: number): SemelRatingsFetch {
   const [ratings, setRatings] = useState<Rating[]>([]);
@@ -14,12 +14,12 @@ export function useSemelComments(id: number): SemelRatingsFetch {
     setIsLoading(true);
     setIsError(null);
     try {
-      const data = await getSemelComments(id);
+      const data = await getSemelRatings(id);
 
       setRatings(data);
     } catch (err) {
       setIsError(
-        err instanceof Error ? err : new Error("Failed to fetch comments"),
+        err instanceof Error ? err : new Error("Failed to fetch ratings"),
       );
     } finally {
       setIsLoading(false);

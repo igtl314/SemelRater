@@ -4,50 +4,56 @@ import { Semel, Rating, CommentResponse } from "@/types";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://backend:8000";
 
+/**
+ * Fetches all semels from the backend API.
+ * @returns Promise<Semel[]> Array of semel objects
+ * @throws Error if the fetch fails
+ */
 export async function getSemels(): Promise<Semel[]> {
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/semlor`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
+  const response = await fetch(`${BACKEND_URL}/api/semlor`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch semels: ${response.statusText}`);
-    }
-
-    return response.json();
-  } catch (error) {
-    console.error("Error fetching semels:", error);
-
-    return [];
+  if (!response.ok) {
+    throw new Error(`Failed to fetch semels: ${response.statusText}`);
   }
+
+  return response.json();
 }
 
-export async function getSemelComments(id: number): Promise<Rating[]> {
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/comments/${id}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
+/**
+ * Fetches ratings for a specific semel from the backend API.
+ * @param id The ID of the semel to fetch ratings for
+ * @returns Promise<Rating[]> Array of rating objects
+ * @throws Error if the fetch fails
+ */
+export async function getSemelRatings(id: number): Promise<Rating[]> {
+  const response = await fetch(`${BACKEND_URL}/api/comments/${id}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch comments: ${response.statusText}`);
-    }
-
-    return response.json();
-  } catch (error) {
-    console.error("Error fetching comments:", error);
-
-    return [];
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ratings: ${response.statusText}`);
   }
+
+  return response.json();
 }
 
+/**
+ * Submits a rating for a specific semel.
+ * @param semelId The ID of the semel to rate
+ * @param rating The rating value (1-5)
+ * @param comment Optional comment with the rating
+ * @returns Promise<CommentResponse> Response with status and message
+ */
 export async function rateSemel(
   semelId: number,
   rating: number,
@@ -59,10 +65,7 @@ export async function rateSemel(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        comment: comment,
-        rating: rating,
-      }),
+      body: JSON.stringify({ comment, rating }),
     });
 
     const data = await response.json();
@@ -78,12 +81,10 @@ export async function rateSemel(
       httpStatus: response.status,
       message: data.message || "Rating saved successfully!",
     };
-  } catch (error) {
-    console.error("Error submitting rating:", error);
-
+  } catch {
     return {
       httpStatus: 500,
-      message: "Failed to submit comment. Please try again.",
+      message: "Failed to submit rating. Please try again.",
     };
   }
 }

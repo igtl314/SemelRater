@@ -62,8 +62,8 @@ export function CommentModal({
         setFormData({ rating: "", comment: "" });
         ctx.refreshSemels();
       }
-    } catch (error) {
-      setMessage("Failed to submit comment. Please try again." + error);
+    } catch {
+      setMessage("Failed to submit rating. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
