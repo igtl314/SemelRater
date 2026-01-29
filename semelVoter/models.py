@@ -77,3 +77,47 @@ class RatingTracker(models.Model):
             tracker.count += 1
             tracker.save()
         return tracker.count
+
+
+class SemlaCreationTracker(models.Model):
+    """Tracks semla creation attempts per IP/user-agent to enforce rate limiting"""
+    ip_address = models.CharField(max_length=45)  # IPv6 can be long
+    user_agent = models.TextField()
+    date = models.DateField(default=django.utils.timezone.now)
+    count = models.PositiveIntegerField(default=1)
+    
+    class Meta:
+        unique_together = ('ip_address', 'user_agent', 'date')
+        
+    @classmethod
+    def get_today_count(cls, ip_address, user_agent):
+        """
+        Get the count of semla creations for today for a specific IP address and user agent.
+        """
+        today = date.today()
+        try:
+            tracker = cls.objects.get(
+                ip_address=ip_address,
+                user_agent=user_agent,
+                date=today
+            )
+            return tracker.count
+        except cls.DoesNotExist:
+            return 0
+            
+    @classmethod
+    def increment_count(cls, ip_address, user_agent):
+        """
+        Increment the creation count for today's date for a specific IP address and user agent.
+        """
+        today = date.today()
+        tracker, created = cls.objects.get_or_create(
+            ip_address=ip_address,
+            user_agent=user_agent,
+            date=today,
+            defaults={'count': 1}
+        )
+        if not created:
+            tracker.count += 1
+            tracker.save()
+        return tracker.count

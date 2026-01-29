@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import Semla, Ratings, RatingTracker
+from .models import Semla, Ratings, RatingTracker, SemlaCreationTracker
 from rest_framework.response import Response
 from .serializers import SemlaSerializer, CommentSerializer, CreateSemlaSerializer
 
@@ -87,9 +87,23 @@ class CreateSemlaView(APIView):
         """
         Create a new Semla entry.
         """
+        # Get IP address and user agent for rate limiting
+        ip_address = self.get_client_ip(request)
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        # Check if this sender has exceeded the daily limit
+        daily_count = SemlaCreationTracker.get_today_count(ip_address, user_agent)
+        if daily_count >= 5:
+            return Response(
+                {"error": "Daily creation limit reached. Please try again tomorrow."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        
         serializer = CreateSemlaSerializer(data=request.data)
         if serializer.is_valid():
             semla = serializer.save()
+            # Increment the creation count
+            SemlaCreationTracker.increment_count(ip_address, user_agent)
             return Response(
                 SemlaSerializer(semla).data,
                 status=status.HTTP_201_CREATED
@@ -98,3 +112,11 @@ class CreateSemlaView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip

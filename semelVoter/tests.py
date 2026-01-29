@@ -258,3 +258,61 @@ class TestCreateSemlaEndpoint:
         
         assert response.status_code == 400
         assert 'price' in response.json() or 'kind' in response.json()
+
+    def test_create_semla_rate_limiting(self, client):
+        """Test that users are limited to 5 creations per day"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+        }
+        
+        # First 5 should succeed
+        for i in range(5):
+            response = client.post('/api/semlor/create', data, content_type='application/json')
+            assert response.status_code == 201, f"Request {i+1} should succeed"
+        
+        # 6th should be rate limited
+        response = client.post('/api/semlor/create', data, content_type='application/json')
+        assert response.status_code == 429
+        assert 'limit' in response.json().get('error', '').lower()
+
+
+@pytest.mark.django_db
+class TestSemlaCreationTracker:
+    """Test suite for SemlaCreationTracker model"""
+    
+    def test_get_today_count_no_records(self):
+        """Test count is 0 when no records exist"""
+        from semelVoter.models import SemlaCreationTracker
+        count = SemlaCreationTracker.get_today_count('192.168.1.1', 'TestAgent')
+        assert count == 0
+    
+    def test_increment_count(self):
+        """Test incrementing creation count"""
+        from semelVoter.models import SemlaCreationTracker
+        
+        # First increment creates record with count 1
+        count = SemlaCreationTracker.increment_count('192.168.1.1', 'TestAgent')
+        assert count == 1
+        
+        # Second increment increases to 2
+        count = SemlaCreationTracker.increment_count('192.168.1.1', 'TestAgent')
+        assert count == 2
+        
+        # Verify get_today_count matches
+        count = SemlaCreationTracker.get_today_count('192.168.1.1', 'TestAgent')
+        assert count == 2
+    
+    def test_different_users_separate_counts(self):
+        """Test that different IP/user-agent combinations have separate counts"""
+        from semelVoter.models import SemlaCreationTracker
+        
+        SemlaCreationTracker.increment_count('192.168.1.1', 'Agent1')
+        SemlaCreationTracker.increment_count('192.168.1.1', 'Agent1')
+        SemlaCreationTracker.increment_count('192.168.1.2', 'Agent1')
+        
+        assert SemlaCreationTracker.get_today_count('192.168.1.1', 'Agent1') == 2
+        assert SemlaCreationTracker.get_today_count('192.168.1.2', 'Agent1') == 1
+        assert SemlaCreationTracker.get_today_count('192.168.1.1', 'Agent2') == 0
