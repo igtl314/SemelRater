@@ -56,7 +56,7 @@ export function CommentModal({
       setMessage(
         response.httpStatus >= 400
           ? response.message
-          : "Comment submitted successfully!",
+          : "Rating submitted successfully!",
       );
       if (response.httpStatus < 400) {
         setFormData({ rating: "", comment: "" });
