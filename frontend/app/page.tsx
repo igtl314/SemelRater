@@ -22,23 +22,38 @@ export default function Home() {
 
   return (
     <section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
-      {/* Loading state */}
       {ctx.isLoading && (
         <div className="flex items-center justify-center">
           <Spinner />
         </div>
       )}
-      <div className="flex justify-end">
-        <ThemeSwitch className="fixed top-4 right-4 z-50" />
-      </div>
-      {/* Display Top 3 Semlor */}
-      <div className=" grid grid-row-2 gap-4 border-b-2 border-b-gray-300 pb-4">
-        <p className="text-xl text-center">Top 3 Semlor</p>
-        <SemelView semelArray={semels.slice(0, 3)} />
-      </div>
-      {/* Display All Semlor */}
+      <ThemeSwitch className="fixed top-4 right-4 z-50" />
+      {semels.length > 0 ? (
+        <>
+          <Top3Semels semels={semels} />
+          <AllSemels semels={semels} />
+        </>
+      ) : (
+        <p>No semels found.</p>
+      )}
+    </section>
+  );
+}
+
+function Top3Semels({ semels }: { semels: Semel[] }) {
+  return (
+    <div className=" grid grid-row-2 gap-4 border-b-2 border-b-gray-300 pb-4">
+      <p className="text-xl text-center">Top 3 Semlor</p>
+      <SemelView semelArray={semels.slice(0, 3)} />
+    </div>
+  );
+}
+
+function AllSemels({ semels }: { semels: Semel[] }) {
+  return (
+    <>
       <p className="text-xl">All Semlor</p>
       <SemelView semelArray={semels} />
-    </section>
+    </>
   );
 }

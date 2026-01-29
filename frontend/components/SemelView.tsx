@@ -1,4 +1,3 @@
-import { Spinner } from "@heroui/spinner";
 import { useState } from "react";
 import { useDisclosure } from "@heroui/modal";
 
@@ -20,7 +19,7 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
     isOpen: isCommentOpen,
     onOpen: onCommentOpen,
     onOpenChange: onCommentOpenChange,
-  } = useDisclosure(); // Add this line
+  } = useDisclosure();
 
   // Fetch comments for a specific Semel
   const { ratings, isLoading, isError } = useSemelComments(
@@ -46,20 +45,14 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {/* Display all Semlor as SemelCard*/}
-      {semelArray.length > 0 ? (
-        semelArray.map((semel: Semel) => (
-          <SemelCard
-            key={semel.id}
-            openCommentModal={handleCommentModal}
-            semel={semel}
-            setModalContent={handleModalContent}
-          />
-        ))
-      ) : (
-        <Spinner className="col-span-full" />
-      )}
-      {/* Model for viewing ratings and comment*/}
+      {semelArray.map((semel) => (
+        <SemelCard
+          key={semel.id}
+          openCommentModal={handleCommentModal}
+          semel={semel}
+          setModalContent={handleModalContent}
+        />
+      ))}
       {semelModalContent && (
         <SemelModal
           Semel={semelModalContent}
@@ -68,7 +61,6 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
           onOpenChange={onOpenChange}
         />
       )}
-      {/* Modal for adding comments */}
       {semelModalContent && (
         <CommentModal
           isOpen={isCommentOpen}
