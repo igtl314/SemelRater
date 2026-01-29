@@ -4,12 +4,8 @@ import { Semel, Rating, CommentResponse } from "@/types";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://backend:8000";
 
-/** HTTP status codes */
-const HTTP_STATUS = {
-  OK: 200,
-  BAD_REQUEST: 400,
-  INTERNAL_SERVER_ERROR: 500,
-} as const;
+/** HTTP status code for internal server errors */
+const HTTP_INTERNAL_SERVER_ERROR = 500;
 
 /**
  * Fetches all semels from the backend API.
@@ -90,7 +86,7 @@ export async function rateSemel(
     };
   } catch {
     return {
-      httpStatus: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      httpStatus: HTTP_INTERNAL_SERVER_ERROR,
       message: "Failed to submit rating. Please try again.",
     };
   }
