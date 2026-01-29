@@ -6,7 +6,7 @@ from django.db import models
 class Semla(models.Model):
     bakery = models.CharField(max_length=255)
     city = models.CharField(max_length=255)
-    picture = models.CharField(max_length=255)  # Will store as /images/user-input
+    picture = models.CharField(max_length=255, blank=True, default='')  # Will store as /images/user-input
     vegan = models.BooleanField(default=False)
     price = models.DecimalField(max_digits=5, decimal_places=2)
     kind = models.CharField(max_length=255)
