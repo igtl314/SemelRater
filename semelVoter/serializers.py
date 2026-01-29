@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from decimal import Decimal
 from .models import Semla, Ratings
 
 class SemlaSerializer(serializers.ModelSerializer):
@@ -22,6 +23,12 @@ class CreateSemlaSerializer(serializers.ModelSerializer):
             'vegan': {'required': False, 'default': False},
             'picture': {'required': False, 'default': '', 'allow_blank': True},
         }
+
+    def validate_price(self, value):
+        """Ensure price is positive"""
+        if value <= Decimal('0'):
+            raise serializers.ValidationError("Price must be greater than zero.")
+        return value
 
 
 class CommentSerializer(serializers.ModelSerializer):

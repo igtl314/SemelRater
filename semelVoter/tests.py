@@ -84,3 +84,55 @@ class TestCreateSemlaSerializer:
         assert serializer.is_valid()
         semla = serializer.save()
         assert semla.picture == '/images/test.jpg'
+
+    def test_price_must_be_positive(self):
+        """Test that price must be a positive value"""
+        base_data = {
+            'bakery': 'Test',
+            'city': 'Stockholm',
+            'kind': 'Traditional',
+        }
+        
+        # Zero price should be rejected
+        data = {**base_data, 'price': '0.00'}
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'price' in serializer.errors
+        
+        # Negative price should be rejected
+        data = {**base_data, 'price': '-10.00'}
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'price' in serializer.errors
+        
+        # Valid positive price should pass
+        data = {**base_data, 'price': '0.01'}
+        serializer = CreateSemlaSerializer(data=data)
+        assert serializer.is_valid()
+
+    def test_price_format_validation(self):
+        """Test that price respects decimal format (max 5 digits, 2 decimals)"""
+        base_data = {
+            'bakery': 'Test',
+            'city': 'Stockholm',
+            'kind': 'Traditional',
+        }
+        
+        # Valid prices
+        valid_prices = ['0.01', '45.00', '100.50', '999.99']
+        for price in valid_prices:
+            data = {**base_data, 'price': price}
+            serializer = CreateSemlaSerializer(data=data)
+            assert serializer.is_valid(), f"Price {price} should be valid but got: {serializer.errors}"
+        
+        # Price too large (exceeds max digits)
+        data = {**base_data, 'price': '10000.00'}
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'price' in serializer.errors
+        
+        # Invalid format (not a number)
+        data = {**base_data, 'price': 'not-a-price'}
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'price' in serializer.errors
