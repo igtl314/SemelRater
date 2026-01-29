@@ -15,7 +15,7 @@ export const SemelContext = createContext<SemelContextType>({
 export const SemelProvider = ({ children }: { children: React.ReactNode }) => {
   const [semels, setSemels] = useState<Semel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<SemelContextType["error"]>(null);
 
   const fetchSemels = useCallback(async () => {
     setIsLoading(true);
