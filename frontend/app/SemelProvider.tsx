@@ -33,9 +33,7 @@ export const SemelProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  const refreshSemels = useCallback(() => {
-    fetchSemels();
-  }, [fetchSemels]);
+  const refreshSemels = fetchSemels;
 
   useEffect(() => {
     fetchSemels();

@@ -17,7 +17,7 @@ export type Semel = {
 export type SemelContextType = {
   semels: Semel[];
   isLoading: boolean;
-  error: any;
+  error: Error | null;
   refreshSemels: () => void;
 };
 
@@ -33,7 +33,7 @@ export type Comment = {
 export type SemelRatingsFetch = {
   ratings: Rating[];
   isLoading: boolean;
-  isError: any;
+  isError: Error | null;
 };
 
 export type CommentResponse = {

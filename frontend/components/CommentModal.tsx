@@ -10,6 +10,9 @@ import { Semel } from "@/types";
 import { SemelContext } from "@/app/SemelProvider";
 import { rateSemel } from "@/app/actions/semel";
 
+/** HTTP status code threshold for error responses */
+const HTTP_ERROR_THRESHOLD = 400;
+
 export function CommentModal({
   semel,
   isOpen,
@@ -54,11 +57,11 @@ export function CommentModal({
       );
 
       setMessage(
-        response.httpStatus >= 400
+        response.httpStatus >= HTTP_ERROR_THRESHOLD
           ? response.message
           : "Rating submitted successfully!",
       );
-      if (response.httpStatus < 400) {
+      if (response.httpStatus < HTTP_ERROR_THRESHOLD) {
         setFormData({ rating: "", comment: "" });
         ctx.refreshSemels();
       }
