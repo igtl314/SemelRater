@@ -205,3 +205,56 @@ class TestCreateSemlaSerializer:
         assert semla.bakery == 'Valhallabageriet'
         assert semla.city == 'Stockholm'
         assert semla.kind == 'Traditional'
+
+
+@pytest.mark.django_db
+class TestCreateSemlaEndpoint:
+    """Test suite for POST /api/semlor/create endpoint"""
+    
+    def test_create_semla_success(self, client):
+        """Test successful creation of a new semla"""
+        data = {
+            'bakery': 'Valhallabageriet',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+        }
+        response = client.post('/api/semlor/create', data, content_type='application/json')
+        
+        assert response.status_code == 201
+        assert response.json()['bakery'] == 'Valhallabageriet'
+        assert response.json()['city'] == 'Stockholm'
+        assert 'id' in response.json()
+        
+        # Verify it was saved to database
+        semla = Semla.objects.get(pk=response.json()['id'])
+        assert semla.bakery == 'Valhallabageriet'
+
+    def test_create_semla_with_all_fields(self, client):
+        """Test creation with all optional fields"""
+        data = {
+            'bakery': 'Petrus',
+            'city': 'Malmö',
+            'price': '55.00',
+            'kind': 'Vegan',
+            'vegan': True,
+            'picture': '/images/petrus-vegan.jpg',
+        }
+        response = client.post('/api/semlor/create', data, content_type='application/json')
+        
+        assert response.status_code == 201
+        assert response.json()['vegan'] is True
+        assert response.json()['picture'] == '/images/petrus-vegan.jpg'
+
+    def test_create_semla_invalid_data(self, client):
+        """Test that invalid data returns 400"""
+        # Missing required field
+        data = {
+            'bakery': 'Test',
+            'city': 'Stockholm',
+            # missing price and kind
+        }
+        response = client.post('/api/semlor/create', data, content_type='application/json')
+        
+        assert response.status_code == 400
+        assert 'price' in response.json() or 'kind' in response.json()

@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from .models import Semla, Ratings, RatingTracker
 from rest_framework.response import Response
-from .serializers import SemlaSerializer, CommentSerializer
+from .serializers import SemlaSerializer, CommentSerializer, CreateSemlaSerializer
 
 
 # Create your views here.
@@ -80,3 +80,21 @@ class SemlaCommentView(APIView):
                 {"error": f"No comments for Semla {pk} where found"}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class CreateSemlaView(APIView):
+    def post(self, request):
+        """
+        Create a new Semla entry.
+        """
+        serializer = CreateSemlaSerializer(data=request.data)
+        if serializer.is_valid():
+            semla = serializer.save()
+            return Response(
+                SemlaSerializer(semla).data,
+                status=status.HTTP_201_CREATED
+            )
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
