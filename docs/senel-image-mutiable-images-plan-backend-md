@@ -1,0 +1,20 @@
+Plan: Multi-image support for Semla
+TL;DR: Add a SemlaImage model with FK to Semla to store multiple image URLs, migrate existing Semla.picture values into this table, and update the create endpoint to accept multiple files via pictures[]. Ordering will be implicit by upload time. This replaces reliance on Semla.picture while preserving existing data through migration.
+
+Steps
+
+Create SemlaImage model with semla FK, image_url string, and created_at timestamp in models.py. Add a migration to create the table and move existing Semla.picture values into SemlaImage, then deprecate/clear Semla.picture.
+Extend serializers in serializers.py: add images list to SemlaSerializer; update CreateSemlaSerializer to accept multiple files via pictures and validate each file’s type/size.
+Update CreateSemlaView in views.py to handle pictures[] multipart files, save each via storage, create SemlaImage rows, and return the images list in the response.
+Update tests in tests.py to cover multi-file upload on creation and migration of legacy picture data.
+Update backend docs to describe pictures[] input and response shape.
+Verification
+
+pytest: run serializer and endpoint tests for multi-file validation and creation.
+Migration check: seed a Semla with picture, run migrations, verify SemlaImage row exists and Semla.picture is no longer used.
+Decisions
+
+New SemlaImage model.
+Migrate existing Semla.picture values.
+Multiple files accepted on create via pictures[].
+Ordering by upload time.
