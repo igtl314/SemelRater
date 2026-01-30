@@ -64,6 +64,8 @@ Follow this cycle strictly:
   - Place tests in appropriate test files (test_*.py)
   - Use pytest fixtures for setup/teardown
   - Use pytest markers for categorization
+  - **Always use the virtual environment**: Run commands using `source venv/bin/activate && <command>` or use venv's executables directly (`venv/bin/python`, `venv/bin/pytest`)
+  - Ensure all Python/Django commands run within the venv context
   
 - **Frontend (TypeScript/Next.js)**: Use Vitest exclusively
   - Place tests alongside components or in __tests__ directories (*.test.ts, *.test.tsx)
