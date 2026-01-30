@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from django.core.files.uploadedfile import UploadedFile
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError as DjangoValidationError
 from decimal import Decimal
 from .models import Semla, Ratings
 
@@ -44,7 +46,32 @@ class CreateSemlaSerializer(serializers.ModelSerializer):
     def validate_picture(self, value):
         if value in (None, ''):
             return value
+        
         if isinstance(value, str):
+            # Validate URL format and ensure only safe protocols
+            if value.strip() == '':
+                return ''
+            
+            # Check for dangerous URL schemes
+            dangerous_schemes = ['javascript:', 'data:', 'file:', 'vbscript:']
+            value_lower = value.lower().strip()
+            for scheme in dangerous_schemes:
+                if value_lower.startswith(scheme):
+                    raise serializers.ValidationError(
+                        f'URL scheme "{scheme}" is not allowed. Only http, https, and relative paths are permitted.'
+                    )
+            
+            # Allow relative paths (starting with /)
+            if value.startswith('/'):
+                return value
+            
+            # For absolute URLs, validate format (must be http or https)
+            validator = URLValidator(schemes=['http', 'https'])
+            try:
+                validator(value)
+            except DjangoValidationError:
+                raise serializers.ValidationError('Invalid URL format. Only valid http or https URLs, or relative paths starting with / are allowed.')
+            
             return value
 
         allowed_types = {'image/jpeg', 'image/png', 'image/webp'}
