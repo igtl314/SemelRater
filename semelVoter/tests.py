@@ -316,6 +316,8 @@ class TestCreateSemlaEndpoint:
             content = file_obj.read()
             assert content == b'valid-image-bytes', \
                 f"Expected file content to match uploaded bytes, got {content!r}"
+            # Reset file pointer to beginning for any subsequent reads
+            file_obj.seek(0)
             saved_paths.append(path)
             return 'semlor/uploads/test-image.jpg'
 
