@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.core.files.uploadedfile import UploadedFile
 from decimal import Decimal
 from .models import Semla, Ratings
 
@@ -9,10 +10,24 @@ class SemlaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class PictureField(serializers.Field):
+    def to_internal_value(self, data):
+        if data in (None, ''):
+            return data
+        if isinstance(data, str):
+            return data
+        if isinstance(data, UploadedFile):
+            return data
+        raise serializers.ValidationError('Invalid file upload.')
+
+    def to_representation(self, value):
+        return value
+
+
 class CreateSemlaSerializer(serializers.ModelSerializer):
     """Serializer for creating new Semla entries"""
 
-    picture = serializers.FileField(required=False, allow_null=True)
+    picture = PictureField(required=False, allow_null=True)
     
     class Meta:
         model = Semla

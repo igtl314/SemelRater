@@ -1,0 +1,3 @@
+django-ipware
+django-storages
+boto3
