@@ -1,4 +1,5 @@
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from decimal import Decimal
 from semelVoter.serializers import CreateSemlaSerializer
 from semelVoter.models import Semla
@@ -205,6 +206,57 @@ class TestCreateSemlaSerializer:
         assert semla.bakery == 'Valhallabageriet'
         assert semla.city == 'Stockholm'
         assert semla.kind == 'Traditional'
+
+    def test_picture_upload_rejects_invalid_content_type(self):
+        """Test that non-image uploads are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': SimpleUploadedFile(
+                'not-an-image.txt',
+                b'not-an-image',
+                content_type='text/plain'
+            ),
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+
+    def test_picture_upload_rejects_large_files(self):
+        """Test that oversized image uploads are rejected"""
+        oversized_content = b'a' * (5 * 1024 * 1024 + 1)
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': SimpleUploadedFile(
+                'large-image.jpg',
+                oversized_content,
+                content_type='image/jpeg'
+            ),
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+
+    def test_picture_upload_accepts_valid_image(self):
+        """Test that valid image uploads are accepted"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': SimpleUploadedFile(
+                'small-image.jpg',
+                b'valid-image-bytes',
+                content_type='image/jpeg'
+            ),
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert serializer.is_valid(), f"Expected image upload to be valid but got errors: {serializer.errors}"
 
 
 @pytest.mark.django_db
