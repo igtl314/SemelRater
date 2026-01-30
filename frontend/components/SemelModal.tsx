@@ -1,6 +1,7 @@
 import { Modal, ModalBody, ModalFooter, ModalContent } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { Spinner } from "@heroui/spinner";
+import { Carousel } from "react-responsive-carousel";
 
 import { SemelImage } from "./SemelImage";
 import { Comment } from "./Comment";
@@ -24,7 +25,13 @@ export function SemelModal({
         {(onClose) => (
           <>
             <ModalBody className="flex flex-col gap-4">
-              <SemelImage src={Semel.picture} />
+              <Carousel>
+                {Semel.images.map((image) => (
+                  <div key={image.id}>
+                    <SemelImage src={image.image_url} />
+                  </div>
+                ))}
+              </Carousel>
               <div className="flex flex-col gap-2 overflow-y-scroll h-4/5 max-h-64">
                 {SemelComments.isLoading ? (
                   <Spinner />

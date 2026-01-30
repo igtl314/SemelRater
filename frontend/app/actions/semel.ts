@@ -108,7 +108,7 @@ export async function createSemel(
   formData: FormData,
 ): Promise<CreateSemelResponse> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/semlor`, {
+    const response = await fetch(`${BACKEND_URL}/api/semlor/create`, {
       method: "POST",
       body: formData,
     });
