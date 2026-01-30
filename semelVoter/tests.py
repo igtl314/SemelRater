@@ -80,11 +80,11 @@ class TestCreateSemlaSerializer:
         assert semla.picture == ''
         
         # With picture field
-        data['picture'] = '/images/test.jpg'
+        data['picture'] = 'https://example.com/images/test.jpg'
         serializer = CreateSemlaSerializer(data=data)
         assert serializer.is_valid()
         semla = serializer.save()
-        assert semla.picture == '/images/test.jpg'
+        assert semla.picture == 'https://example.com/images/test.jpg'
 
     def test_price_must_be_positive(self):
         """Test that price must be a positive value"""
@@ -258,6 +258,69 @@ class TestCreateSemlaSerializer:
         serializer = CreateSemlaSerializer(data=data)
         assert serializer.is_valid(), f"Expected image upload to be valid but got errors: {serializer.errors}"
 
+    def test_picture_url_validation_rejects_javascript_urls(self):
+        """Test that javascript: URLs are rejected for security"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'javascript:alert("xss")',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+
+    def test_picture_url_validation_rejects_data_urls(self):
+        """Test that data: URLs are rejected for security"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'data:text/html,<script>alert("xss")</script>',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+
+    def test_picture_url_validation_accepts_https_urls(self):
+        """Test that valid HTTPS URLs are accepted"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'https://cdn.example.com/images/semla.jpg',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert serializer.is_valid(), f"Expected HTTPS URL to be valid but got errors: {serializer.errors}"
+
+    def test_picture_url_validation_accepts_http_urls(self):
+        """Test that valid HTTP URLs are accepted"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'http://example.com/images/semla.jpg',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert serializer.is_valid(), f"Expected HTTP URL to be valid but got errors: {serializer.errors}"
+
+    def test_picture_url_validation_rejects_invalid_urls(self):
+        """Test that invalid URL strings are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'not-a-valid-url',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+
 
 @pytest.mark.django_db
 class TestCreateSemlaEndpoint:
@@ -290,13 +353,13 @@ class TestCreateSemlaEndpoint:
             'price': '55.00',
             'kind': 'Vegan',
             'vegan': True,
-            'picture': '/images/petrus-vegan.jpg',
+            'picture': 'https://example.com/images/petrus-vegan.jpg',
         }
         response = client.post('/api/semlor/create', data, content_type='application/json')
         
         assert response.status_code == 201
         assert response.json()['vegan'] is True
-        assert response.json()['picture'] == '/images/petrus-vegan.jpg'
+        assert response.json()['picture'] == 'https://example.com/images/petrus-vegan.jpg'
 
     def test_create_semla_with_image_upload(self, client, monkeypatch):
         """Test creation with multipart image upload stores URL"""
