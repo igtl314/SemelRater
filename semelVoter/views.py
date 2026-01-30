@@ -92,18 +92,19 @@ class CreateSemlaView(APIView):
         ip_address = self.get_client_ip(request)
         user_agent = request.META.get('HTTP_USER_AGENT', '')
         
+        # Check if this sender has exceeded the daily limit
+        daily_count = SemlaCreationTracker.get_today_count(ip_address, user_agent)
+        if daily_count >= 5:
+            return Response(
+                {"error": "Daily creation limit reached. Please try again tomorrow."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        
         serializer = CreateSemlaSerializer(data=request.data)
         if serializer.is_valid():
-            # Wrap rate limit check, creation and counter increment in a transaction
-            # to ensure atomicity and prevent race conditions
+            # Wrap creation and counter increment in a transaction
+            # to ensure atomicity and prevent inconsistent state
             with transaction.atomic():
-                # Check rate limit inside transaction to prevent TOCTOU race
-                daily_count = SemlaCreationTracker.get_today_count(ip_address, user_agent)
-                if daily_count >= 5:
-                    return Response(
-                        {"error": "Daily creation limit reached. Please try again tomorrow."},
-                        status=status.HTTP_429_TOO_MANY_REQUESTS
-                    )
                 semla = serializer.save()
                 # Increment the creation count
                 SemlaCreationTracker.increment_count(ip_address, user_agent)
