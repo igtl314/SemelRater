@@ -5,6 +5,10 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from decimal import Decimal
 from .models import Semla, Ratings
 
+# Constants for URL validation
+DANGEROUS_URL_SCHEMES = ['javascript:', 'data:', 'file:', 'vbscript:', 'blob:', 'about:']
+URL_VALIDATOR = URLValidator(schemes=['http', 'https'])
+
 class SemlaSerializer(serializers.ModelSerializer):
     rating = serializers.DecimalField(max_digits=3, decimal_places=2, coerce_to_string=False)
     class Meta:
@@ -55,10 +59,15 @@ class CreateSemlaSerializer(serializers.ModelSerializer):
             if value == '':
                 return ''
             
+            # Reject protocol-relative URLs (starting with //)
+            if value.startswith('//'):
+                raise serializers.ValidationError(
+                    'Protocol-relative URLs are not allowed. Please use http or https explicitly.'
+                )
+            
             # Check for dangerous URL schemes (case-insensitive)
-            dangerous_schemes = ['javascript:', 'data:', 'file:', 'vbscript:', 'blob:', 'about:']
             value_lower = value.lower()
-            for scheme in dangerous_schemes:
+            for scheme in DANGEROUS_URL_SCHEMES:
                 if value_lower.startswith(scheme):
                     raise serializers.ValidationError(
                         f'URL scheme "{scheme}" is not allowed. Only http, https, and relative paths are permitted.'
@@ -68,10 +77,16 @@ class CreateSemlaSerializer(serializers.ModelSerializer):
             if value.startswith('/'):
                 return value
             
+            # Reject relative paths without leading slash (e.g., "images/file.jpg")
+            # These are ambiguous and should be rejected
+            if not value.startswith('http://') and not value.startswith('https://'):
+                raise serializers.ValidationError(
+                    'Invalid URL format. Relative paths must start with /. Use absolute http or https URLs otherwise.'
+                )
+            
             # For absolute URLs, validate format (must be http or https)
-            validator = URLValidator(schemes=['http', 'https'])
             try:
-                validator(value)
+                URL_VALIDATOR(value)
             except DjangoValidationError:
                 raise serializers.ValidationError('Invalid URL format. Only valid http or https URLs, or relative paths starting with / are allowed.')
             

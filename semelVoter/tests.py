@@ -470,6 +470,47 @@ class TestCreateSemlaSerializer:
         assert serializer.is_valid(), f"Expected relative path with whitespace to be accepted but got errors: {serializer.errors}"
         assert serializer.validated_data['picture'] == '/images/semla.jpg'
 
+    def test_picture_url_rejects_protocol_relative_url(self):
+        """Test that protocol-relative URLs (starting with //) are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': '//example.com/images/semla.jpg',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+        assert 'protocol-relative' in str(serializer.errors['picture'][0]).lower()
+
+    def test_picture_url_rejects_relative_path_without_leading_slash(self):
+        """Test that relative paths without leading slash are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'images/semla.jpg',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+        assert 'relative paths must start with /' in str(serializer.errors['picture'][0]).lower()
+
+    def test_picture_url_rejects_parent_directory_traversal(self):
+        """Test that parent directory traversal paths are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': '../images/semla.jpg',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+
 
 @pytest.mark.django_db
 class TestCreateSemlaEndpoint:
