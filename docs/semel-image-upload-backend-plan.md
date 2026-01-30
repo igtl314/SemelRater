@@ -18,4 +18,3 @@ Use S3-compatible storage via django-storages.
 Keep the existing Semla.picture string field; store the uploaded file’s URL there.
 Enforce 5MB and JPEG/PNG/WebP validation.
 Keep endpoint unauthenticated for now.
-GPT-5.2-Codex • 1x
