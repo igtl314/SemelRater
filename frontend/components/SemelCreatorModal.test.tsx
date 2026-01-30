@@ -36,7 +36,7 @@ describe('SemelCreatorModal', () => {
     expect(screen.getByLabelText(/city/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/price/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/kind/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/vegan/i)).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: /vegan/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/image/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /create/i })).toBeInTheDocument();
   });
@@ -102,10 +102,17 @@ describe('SemelCreatorModal', () => {
       />
     );
 
+    // Fill required fields to allow form submission
+    await user.type(screen.getByLabelText(/bakery/i), 'Test');
+    await user.type(screen.getByLabelText(/city/i), 'Test');
+    await user.type(screen.getByLabelText(/price/i), '10');
+    await user.type(screen.getByLabelText(/kind/i), 'Test');
+    
     await user.click(screen.getByRole('button', { name: /create/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/this field is required/i)).toBeInTheDocument();
+      const messageEl = screen.getByTestId('form-message');
+      expect(messageEl).toHaveTextContent(/validation failed/i);
     });
   });
 
