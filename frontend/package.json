@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix"
+    "lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@heroui/button": "2.2.17",
