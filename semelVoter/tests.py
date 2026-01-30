@@ -258,6 +258,138 @@ class TestCreateSemlaSerializer:
         serializer = CreateSemlaSerializer(data=data)
         assert serializer.is_valid(), f"Expected image upload to be valid but got errors: {serializer.errors}"
 
+    def test_picture_url_accepts_valid_http_url(self):
+        """Test that valid HTTP URLs are accepted"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'http://example.com/images/semla.jpg',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert serializer.is_valid(), f"Expected valid HTTP URL to be accepted but got errors: {serializer.errors}"
+
+    def test_picture_url_accepts_valid_https_url(self):
+        """Test that valid HTTPS URLs are accepted"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'https://cdn.example.com/semlor/image.png',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert serializer.is_valid(), f"Expected valid HTTPS URL to be accepted but got errors: {serializer.errors}"
+
+    def test_picture_url_rejects_javascript_scheme(self):
+        """Test that javascript: URLs are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'javascript:alert("XSS")',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+        assert 'javascript:' in str(serializer.errors['picture'][0]).lower()
+
+    def test_picture_url_rejects_data_scheme(self):
+        """Test that data: URLs are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'data:text/html,<script>alert("XSS")</script>',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+        assert 'data:' in str(serializer.errors['picture'][0]).lower()
+
+    def test_picture_url_rejects_file_scheme(self):
+        """Test that file: URLs are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'file:///etc/passwd',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+        assert 'file:' in str(serializer.errors['picture'][0]).lower()
+
+    def test_picture_url_rejects_vbscript_scheme(self):
+        """Test that vbscript: URLs are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'vbscript:msgbox("XSS")',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+        assert 'vbscript:' in str(serializer.errors['picture'][0]).lower()
+
+    def test_picture_url_rejects_invalid_url_format(self):
+        """Test that invalid URL formats are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'not a valid url',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+        assert 'invalid' in str(serializer.errors['picture'][0]).lower()
+
+    def test_picture_url_accepts_empty_string(self):
+        """Test that empty string is accepted for optional picture field"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': '',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert serializer.is_valid(), f"Expected empty string to be valid but got errors: {serializer.errors}"
+
+    def test_picture_url_handles_whitespace_only(self):
+        """Test that whitespace-only strings are normalized to empty"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': '   ',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert serializer.is_valid(), f"Expected whitespace-only string to be valid but got errors: {serializer.errors}"
+        assert serializer.validated_data['picture'] == ''
+
+    def test_picture_url_accepts_relative_path(self):
+        """Test that relative paths starting with / are accepted"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': '/images/semla.jpg',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert serializer.is_valid(), f"Expected relative path to be valid but got errors: {serializer.errors}"
+        assert serializer.validated_data['picture'] == '/images/semla.jpg'
+
 
 @pytest.mark.django_db
 class TestCreateSemlaEndpoint:
