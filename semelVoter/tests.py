@@ -1,8 +1,9 @@
 import pytest
+import uuid
 from django.core.files.uploadedfile import SimpleUploadedFile, InMemoryUploadedFile
 from decimal import Decimal
 from semelVoter.serializers import CreateSemlaSerializer
-from semelVoter.models import Semla
+from semelVoter.models import Semla, SemlaImage
 
 
 @pytest.mark.django_db
@@ -587,3 +588,107 @@ class TestIPAddressExtraction:
         response = client.post('/api/semlor/create', data, content_type='application/json')
         assert response.status_code == 400
         assert 'IP address' in response.json().get('error', '')
+
+
+@pytest.mark.django_db
+class TestSemlaImageModel:
+    """Test suite for SemlaImage model"""
+    
+    def test_semla_image_has_uuid_primary_key(self):
+        """Test that SemlaImage uses UUID as primary key"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        image_uuid = uuid.uuid4()
+        image = SemlaImage.objects.create(
+            id=image_uuid,
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/test.jpg'
+        )
+        assert image.id == image_uuid
+        assert isinstance(image.id, uuid.UUID)
+    
+    def test_semla_image_has_foreign_key_to_semla(self):
+        """Test that SemlaImage has FK to Semla"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        image = SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/test.jpg'
+        )
+        assert image.semla == semla
+        assert image.semla_id == semla.id
+    
+    def test_semla_image_stores_url(self):
+        """Test that SemlaImage stores the image URL"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        url = 'https://bucket.s3.amazonaws.com/semlor/abc123.jpg'
+        image = SemlaImage.objects.create(
+            semla=semla,
+            image_url=url
+        )
+        assert image.image_url == url
+    
+    def test_semla_image_has_created_at_timestamp(self):
+        """Test that SemlaImage has auto-set created_at timestamp"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        image = SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/test.jpg'
+        )
+        assert image.created_at is not None
+    
+    def test_semla_can_have_multiple_images(self):
+        """Test that a Semla can have multiple associated images"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/image1.jpg'
+        )
+        SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/image2.jpg'
+        )
+        assert semla.images.count() == 2
+    
+    def test_images_ordered_by_created_at(self):
+        """Test that images are ordered by created_at timestamp"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        image1 = SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/first.jpg'
+        )
+        image2 = SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/second.jpg'
+        )
+        images = list(semla.images.all())
+        assert images[0] == image1
+        assert images[1] == image2

@@ -1,4 +1,5 @@
 import django
+import uuid
 from django.db import models
 from django.utils.timezone import localdate
 # Create your models here.
@@ -22,6 +23,20 @@ class Semla(models.Model):
             self.save()
         except Exception as e:
             print(f"Error updating rating: {e}")
+
+
+class SemlaImage(models.Model):
+    """Stores images associated with a Semla. UUID is used as S3 filename."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    semla = models.ForeignKey(Semla, on_delete=models.CASCADE, related_name='images')
+    image_url = models.CharField(max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Image {self.id} for {self.semla.bakery}"
 
 class Ratings(models.Model):
     semla = models.ForeignKey(Semla, on_delete=models.CASCADE, related_name='ratings')
