@@ -1,8 +1,9 @@
 import pytest
-from django.core.files.uploadedfile import SimpleUploadedFile, InMemoryUploadedFile
+import uuid
+from django.core.files.uploadedfile import SimpleUploadedFile
 from decimal import Decimal
 from semelVoter.serializers import CreateSemlaSerializer
-from semelVoter.models import Semla
+from semelVoter.models import Semla, SemlaImage
 
 
 @pytest.mark.django_db
@@ -66,25 +67,6 @@ class TestCreateSemlaSerializer:
         assert serializer.is_valid()
         semla = serializer.save()
         assert semla.vegan is True
-        
-        # Without picture field (should be optional)
-        data = {
-            'bakery': 'Test',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert serializer.is_valid()
-        semla = serializer.save()
-        assert semla.picture == ''
-        
-        # With picture field
-        data['picture'] = 'https://example.com/images/test.jpg'
-        serializer = CreateSemlaSerializer(data=data)
-        assert serializer.is_valid()
-        semla = serializer.save()
-        assert semla.picture == 'https://example.com/images/test.jpg'
 
     def test_price_must_be_positive(self):
         """Test that price must be a positive value"""
@@ -207,120 +189,6 @@ class TestCreateSemlaSerializer:
         assert semla.city == 'Stockholm'
         assert semla.kind == 'Traditional'
 
-    def test_picture_upload_rejects_invalid_content_type(self):
-        """Test that non-image uploads are rejected"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': SimpleUploadedFile(
-                'not-an-image.txt',
-                b'not-an-image',
-                content_type='text/plain'
-            ),
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert not serializer.is_valid()
-        assert 'picture' in serializer.errors
-
-    def test_picture_upload_rejects_large_files(self):
-        """Test that oversized image uploads are rejected"""
-        oversized_content = b'a' * (5 * 1024 * 1024 + 1)
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': SimpleUploadedFile(
-                'large-image.jpg',
-                oversized_content,
-                content_type='image/jpeg'
-            ),
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert not serializer.is_valid()
-        assert 'picture' in serializer.errors
-
-    def test_picture_upload_accepts_valid_image(self):
-        """Test that valid image uploads are accepted"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': SimpleUploadedFile(
-                'small-image.jpg',
-                b'valid-image-bytes',
-                content_type='image/jpeg'
-            ),
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert serializer.is_valid(), f"Expected image upload to be valid but got errors: {serializer.errors}"
-
-    def test_picture_url_validation_rejects_javascript_urls(self):
-        """Test that javascript: URLs are rejected for security"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': 'javascript:alert("xss")',
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert not serializer.is_valid()
-        assert 'picture' in serializer.errors
-
-    def test_picture_url_validation_rejects_data_urls(self):
-        """Test that data: URLs are rejected for security"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': 'data:text/html,<script>alert("xss")</script>',
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert not serializer.is_valid()
-        assert 'picture' in serializer.errors
-
-    def test_picture_url_validation_accepts_https_urls(self):
-        """Test that valid HTTPS URLs are accepted"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': 'https://cdn.example.com/images/semla.jpg',
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert serializer.is_valid(), f"Expected HTTPS URL to be valid but got errors: {serializer.errors}"
-
-    def test_picture_url_validation_accepts_http_urls(self):
-        """Test that valid HTTP URLs are accepted"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': 'http://example.com/images/semla.jpg',
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert serializer.is_valid(), f"Expected HTTP URL to be valid but got errors: {serializer.errors}"
-
-    def test_picture_url_validation_rejects_invalid_urls(self):
-        """Test that invalid URL strings are rejected"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': 'not-a-valid-url',
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert not serializer.is_valid()
-        assert 'picture' in serializer.errors
-
 
 @pytest.mark.django_db
 class TestCreateSemlaEndpoint:
@@ -353,61 +221,11 @@ class TestCreateSemlaEndpoint:
             'price': '55.00',
             'kind': 'Vegan',
             'vegan': True,
-            'picture': 'https://example.com/images/petrus-vegan.jpg',
         }
         response = client.post('/api/semlor/create', data, content_type='application/json')
         
         assert response.status_code == 201
         assert response.json()['vegan'] is True
-        assert response.json()['picture'] == 'https://example.com/images/petrus-vegan.jpg'
-
-    def test_create_semla_with_image_upload(self, client, monkeypatch):
-        """Test creation with multipart image upload stores URL"""
-        saved_paths = []
-
-        def fake_save(path, file_obj):
-            # Validate that file_obj is an InMemoryUploadedFile instance
-            # (Django converts SimpleUploadedFile to InMemoryUploadedFile during request processing)
-            assert isinstance(file_obj, InMemoryUploadedFile), \
-                f"Expected InMemoryUploadedFile, got {type(file_obj)}"
-            # Validate file properties
-            assert file_obj.name == 'test-image.jpg', \
-                f"Expected file name 'test-image.jpg', got '{file_obj.name}'"
-            assert file_obj.content_type == 'image/jpeg', \
-                f"Expected content type 'image/jpeg', got '{file_obj.content_type}'"
-            # Read and validate file content
-            content = file_obj.read()
-            assert content == b'valid-image-bytes', \
-                f"Expected file content to match uploaded bytes, got {content!r}"
-            # Reset file pointer to beginning for any subsequent reads
-            file_obj.seek(0)
-            saved_paths.append(path)
-            return 'semlor/uploads/test-image.jpg'
-
-        def fake_url(path):
-            return f"https://cdn.example.com/{path}"
-
-        import semelVoter.views as views
-        monkeypatch.setattr(views.default_storage, 'save', fake_save)
-        monkeypatch.setattr(views.default_storage, 'url', fake_url)
-
-        data = {
-            'bakery': 'Image Bakery',
-            'city': 'Stockholm',
-            'price': '60.00',
-            'kind': 'Traditional',
-            'picture': SimpleUploadedFile(
-                'test-image.jpg',
-                b'valid-image-bytes',
-                content_type='image/jpeg'
-            ),
-        }
-
-        response = client.post('/api/semlor/create', data)
-
-        assert response.status_code == 201
-        assert response.json()['picture'] == 'https://cdn.example.com/semlor/uploads/test-image.jpg'
-        assert saved_paths, "Expected storage.save to be called"
 
     def test_create_semla_invalid_data(self, client):
         """Test that invalid data returns 400"""
@@ -587,3 +405,510 @@ class TestIPAddressExtraction:
         response = client.post('/api/semlor/create', data, content_type='application/json')
         assert response.status_code == 400
         assert 'IP address' in response.json().get('error', '')
+
+
+@pytest.mark.django_db
+class TestSemlaImageModel:
+    """Test suite for SemlaImage model"""
+    
+    def test_semla_image_has_uuid_primary_key(self):
+        """Test that SemlaImage uses UUID as primary key"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        image_uuid = uuid.uuid4()
+        image = SemlaImage.objects.create(
+            id=image_uuid,
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/test.jpg'
+        )
+        assert image.id == image_uuid
+        assert isinstance(image.id, uuid.UUID)
+    
+    def test_semla_image_has_foreign_key_to_semla(self):
+        """Test that SemlaImage has FK to Semla"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        image = SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/test.jpg'
+        )
+        assert image.semla == semla
+        assert image.semla_id == semla.id
+    
+    def test_semla_image_stores_url(self):
+        """Test that SemlaImage stores the image URL"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        url = 'https://bucket.s3.amazonaws.com/semlor/abc123.jpg'
+        image = SemlaImage.objects.create(
+            semla=semla,
+            image_url=url
+        )
+        assert image.image_url == url
+    
+    def test_semla_image_has_created_at_timestamp(self):
+        """Test that SemlaImage has auto-set created_at timestamp"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        image = SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/test.jpg'
+        )
+        assert image.created_at is not None
+    
+    def test_semla_can_have_multiple_images(self):
+        """Test that a Semla can have multiple associated images"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/image1.jpg'
+        )
+        SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/image2.jpg'
+        )
+        assert semla.images.count() == 2
+    
+    def test_images_ordered_by_created_at(self):
+        """Test that images are ordered by created_at timestamp"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        image1 = SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/first.jpg'
+        )
+        image2 = SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/second.jpg'
+        )
+        images = list(semla.images.all())
+        assert images[0] == image1
+        assert images[1] == image2
+
+
+class TestUploadImageToS3:
+    """Test suite for S3 image upload utility"""
+    
+    def test_upload_returns_uuid_and_url_on_success(self, monkeypatch):
+        """Test that successful upload returns (uuid, url) tuple"""
+        from semelVoter.utils import upload_image_to_s3
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        # Mock successful S3 upload
+        def mock_save(path, file_obj):
+            return path
+        
+        def mock_url(path):
+            return f"https://bucket.s3.amazonaws.com/{path}"
+        
+        from django.core.files.storage import default_storage
+        monkeypatch.setattr(default_storage, 'save', mock_save)
+        monkeypatch.setattr(default_storage, 'url', mock_url)
+        
+        file = SimpleUploadedFile('test.jpg', b'image-bytes', content_type='image/jpeg')
+        result = upload_image_to_s3(file)
+        
+        assert result is not None
+        image_uuid, url = result
+        assert isinstance(image_uuid, uuid.UUID)
+        assert str(image_uuid) in url
+        assert url.endswith('.jpg')
+    
+    def test_upload_uses_uuid_as_filename(self, monkeypatch):
+        """Test that the S3 key uses UUID as filename"""
+        from semelVoter.utils import upload_image_to_s3
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        saved_path = None
+        
+        def mock_save(path, file_obj):
+            nonlocal saved_path
+            saved_path = path
+            return path
+        
+        def mock_url(path):
+            return f"https://bucket.s3.amazonaws.com/{path}"
+        
+        from django.core.files.storage import default_storage
+        monkeypatch.setattr(default_storage, 'save', mock_save)
+        monkeypatch.setattr(default_storage, 'url', mock_url)
+        
+        file = SimpleUploadedFile('original-name.png', b'image-bytes', content_type='image/png')
+        result = upload_image_to_s3(file)
+        
+        image_uuid, _ = result
+        # Path should be semlor/{uuid}.png, not original filename
+        assert saved_path == f"semlor/{image_uuid}.png"
+    
+    def test_upload_returns_none_on_failure(self, monkeypatch):
+        """Test that failed upload returns None"""
+        from semelVoter.utils import upload_image_to_s3
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        def mock_save(path, file_obj):
+            raise Exception("S3 connection failed")
+        
+        from django.core.files.storage import default_storage
+        monkeypatch.setattr(default_storage, 'save', mock_save)
+        
+        file = SimpleUploadedFile('test.jpg', b'image-bytes', content_type='image/jpeg')
+        result = upload_image_to_s3(file)
+        
+        assert result is None
+    
+    def test_upload_extracts_extension_from_content_type(self, monkeypatch):
+        """Test that file extension is derived from content type"""
+        from semelVoter.utils import upload_image_to_s3
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        saved_paths = []
+        
+        def mock_save(path, file_obj):
+            saved_paths.append(path)
+            return path
+        
+        def mock_url(path):
+            return f"https://bucket.s3.amazonaws.com/{path}"
+        
+        from django.core.files.storage import default_storage
+        monkeypatch.setattr(default_storage, 'save', mock_save)
+        monkeypatch.setattr(default_storage, 'url', mock_url)
+        
+        # Test JPEG
+        file = SimpleUploadedFile('a.txt', b'bytes', content_type='image/jpeg')
+        upload_image_to_s3(file)
+        assert saved_paths[-1].endswith('.jpg')
+        
+        # Test PNG
+        file = SimpleUploadedFile('b.txt', b'bytes', content_type='image/png')
+        upload_image_to_s3(file)
+        assert saved_paths[-1].endswith('.png')
+        
+        # Test WebP
+        file = SimpleUploadedFile('c.txt', b'bytes', content_type='image/webp')
+        upload_image_to_s3(file)
+        assert saved_paths[-1].endswith('.webp')
+
+
+@pytest.mark.django_db
+class TestSemlaImageSerializer:
+    """Test suite for SemlaImageSerializer"""
+    
+    def test_serializes_uuid_and_url(self):
+        """Test that SemlaImageSerializer outputs id and image_url"""
+        from semelVoter.serializers import SemlaImageSerializer
+        
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        image_uuid = uuid.uuid4()
+        image = SemlaImage.objects.create(
+            id=image_uuid,
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/test.jpg'
+        )
+        
+        serializer = SemlaImageSerializer(image)
+        data = serializer.data
+        
+        assert data['id'] == str(image_uuid)
+        assert data['image_url'] == 'https://bucket.s3.amazonaws.com/semlor/test.jpg'
+
+
+@pytest.mark.django_db
+class TestSemlaSerializerWithImages:
+    """Test suite for SemlaSerializer with images field"""
+    
+    def test_includes_images_list(self):
+        """Test that SemlaSerializer includes images list"""
+        from semelVoter.serializers import SemlaSerializer
+        
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/img1.jpg'
+        )
+        SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/img2.jpg'
+        )
+        
+        serializer = SemlaSerializer(semla)
+        data = serializer.data
+        
+        assert 'images' in data
+        assert len(data['images']) == 2
+        assert data['images'][0]['image_url'] == 'https://bucket.s3.amazonaws.com/semlor/img1.jpg'
+    
+    def test_empty_images_list_when_no_images(self):
+        """Test that images is empty list when semla has no images"""
+        from semelVoter.serializers import SemlaSerializer
+        
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        
+        serializer = SemlaSerializer(semla)
+        data = serializer.data
+        
+        assert 'images' in data
+        assert data['images'] == []
+
+
+@pytest.mark.django_db
+class TestCreateSemlaWithMultipleImages:
+    """Test suite for creating Semla with multiple image uploads"""
+    
+    def test_create_semla_with_multiple_images(self, client, monkeypatch):
+        """Test that multiple images are uploaded and SemlaImage rows created"""
+        uploaded_files = []
+        
+        def mock_upload(file):
+            import uuid as uuid_module
+            image_uuid = uuid_module.uuid4()
+            url = f"https://bucket.s3.amazonaws.com/semlor/{image_uuid}.jpg"
+            uploaded_files.append((image_uuid, url))
+            return (image_uuid, url)
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload)
+        
+        data = {
+            'bakery': 'Multi Image Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        files = {
+            'pictures': [
+                SimpleUploadedFile('img1.jpg', b'bytes1', content_type='image/jpeg'),
+                SimpleUploadedFile('img2.jpg', b'bytes2', content_type='image/jpeg'),
+            ]
+        }
+        
+        response = client.post('/api/semlor/create', {**data, **files})
+        
+        assert response.status_code == 201
+        assert 'images' in response.json()
+        assert len(response.json()['images']) == 2
+        
+        # Verify SemlaImage rows were created
+        semla_id = response.json()['id']
+        semla = Semla.objects.get(pk=semla_id)
+        assert semla.images.count() == 2
+    
+    def test_create_semla_succeeds_when_all_uploads_fail(self, client, monkeypatch):
+        """Test that Semla is created even if all image uploads fail"""
+        def mock_upload_fail(file):
+            return None  # Simulate S3 failure
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload_fail)
+        
+        data = {
+            'bakery': 'Failing Upload Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        files = {
+            'pictures': [
+                SimpleUploadedFile('img1.jpg', b'bytes1', content_type='image/jpeg'),
+            ]
+        }
+        
+        response = client.post('/api/semlor/create', {**data, **files})
+        
+        # Semla should still be created
+        assert response.status_code == 201
+        assert response.json()['images'] == []
+        
+        # Verify Semla exists in database
+        semla_id = response.json()['id']
+        assert Semla.objects.filter(pk=semla_id).exists()
+    
+    def test_create_semla_with_partial_upload_failure(self, client, monkeypatch):
+        """Test that Semla is created with only successfully uploaded images"""
+        call_count = [0]
+        
+        def mock_upload_partial(file):
+            import uuid as uuid_module
+            call_count[0] += 1
+            if call_count[0] == 1:
+                # First upload succeeds
+                image_uuid = uuid_module.uuid4()
+                return (image_uuid, f"https://bucket.s3.amazonaws.com/semlor/{image_uuid}.jpg")
+            else:
+                # Second upload fails
+                return None
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload_partial)
+        
+        data = {
+            'bakery': 'Partial Upload Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        files = {
+            'pictures': [
+                SimpleUploadedFile('img1.jpg', b'bytes1', content_type='image/jpeg'),
+                SimpleUploadedFile('img2.jpg', b'bytes2', content_type='image/jpeg'),
+            ]
+        }
+        
+        response = client.post('/api/semlor/create', {**data, **files})
+        
+        assert response.status_code == 201
+        # Only one image should be in the response
+        assert len(response.json()['images']) == 1
+    
+    def test_create_semla_without_images_still_works(self, client):
+        """Test that creating Semla without any images still works"""
+        data = {
+            'bakery': 'No Image Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        
+        response = client.post('/api/semlor/create', data, content_type='application/json')
+        
+        assert response.status_code == 201
+        assert response.json()['images'] == []
+    
+    def test_semla_image_uuid_matches_s3_filename(self, client, monkeypatch):
+        """Test that SemlaImage.id matches the UUID used in S3 filename"""
+        captured_uuid = [None]
+        
+        def mock_upload(file):
+            import uuid as uuid_module
+            image_uuid = uuid_module.uuid4()
+            captured_uuid[0] = image_uuid
+            return (image_uuid, f"https://bucket.s3.amazonaws.com/semlor/{image_uuid}.jpg")
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload)
+        
+        data = {
+            'bakery': 'UUID Test Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        files = {
+            'pictures': [
+                SimpleUploadedFile('img.jpg', b'bytes', content_type='image/jpeg'),
+            ]
+        }
+        
+        response = client.post('/api/semlor/create', {**data, **files})
+        
+        assert response.status_code == 201
+        image_data = response.json()['images'][0]
+        # The UUID in response should match what was returned by upload function
+        assert image_data['id'] == str(captured_uuid[0])
+        assert str(captured_uuid[0]) in image_data['image_url']
+
+
+@pytest.mark.django_db
+class TestLegacyPictureFieldCleanup:
+    """Test suite for verifying old picture field is no longer used"""
+    
+    def test_old_picture_field_not_populated_on_new_semla(self, client, monkeypatch):
+        """Test that the legacy Semla.picture field stays empty for new uploads"""
+        def mock_upload(file):
+            import uuid as uuid_module
+            image_uuid = uuid_module.uuid4()
+            return (image_uuid, f"https://bucket.s3.amazonaws.com/semlor/{image_uuid}.jpg")
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload)
+        
+        data = {
+            'bakery': 'New Upload Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        files = {
+            'pictures': [
+                SimpleUploadedFile('img.jpg', b'bytes', content_type='image/jpeg'),
+            ]
+        }
+        
+        response = client.post('/api/semlor/create', {**data, **files})
+        
+        assert response.status_code == 201
+        # New images should be in images[], not picture field
+        assert len(response.json()['images']) == 1
+        # Legacy picture field should be empty
+        assert response.json()['picture'] == ''
+        
+        # Verify in database
+        semla = Semla.objects.get(pk=response.json()['id'])
+        assert semla.picture == ''
+    
+    def test_single_picture_upload_field_ignored(self, client, monkeypatch):
+        """Test that old single picture upload field is ignored"""
+        def mock_upload(file):
+            import uuid as uuid_module
+            image_uuid = uuid_module.uuid4()
+            return (image_uuid, f"https://bucket.s3.amazonaws.com/semlor/{image_uuid}.jpg")
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload)
+        
+        data = {
+            'bakery': 'Old Field Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+            # Old single picture field - should be ignored
+            'picture': SimpleUploadedFile('old.jpg', b'old-bytes', content_type='image/jpeg'),
+        }
+        
+        response = client.post('/api/semlor/create', data)
+        
+        assert response.status_code == 201
+        # No images should be created from old picture field
+        assert response.json()['images'] == []
+        # Legacy picture field should not be populated
+        assert response.json()['picture'] == ''
