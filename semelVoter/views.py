@@ -5,7 +5,6 @@ from .models import Semla, Ratings, RatingTracker, SemlaCreationTracker, SemlaIm
 from rest_framework.response import Response
 from .serializers import SemlaSerializer, CommentSerializer, CreateSemlaSerializer
 from ipware import get_client_ip
-from django.core.files.storage import default_storage
 from .utils import upload_image_to_s3
 
 logger = logging.getLogger(__name__)
@@ -120,14 +119,7 @@ class CreateSemlaView(APIView):
             # Wrap creation and counter increment in a transaction
             # to ensure atomicity and prevent inconsistent state
             with transaction.atomic():
-                # Handle legacy single picture field
-                picture = serializer.validated_data.get('picture')
-                if picture and not isinstance(picture, str):
-                    saved_path = default_storage.save(f"semlor/uploads/{picture.name}", picture)
-                    picture_url = default_storage.url(saved_path)
-                    semla = serializer.save(picture=picture_url)
-                else:
-                    semla = serializer.save()
+                semla = serializer.save()
                 
                 # Handle multiple image uploads via pictures[]
                 pictures = request.FILES.getlist('pictures')

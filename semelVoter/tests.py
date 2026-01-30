@@ -1,6 +1,6 @@
 import pytest
 import uuid
-from django.core.files.uploadedfile import SimpleUploadedFile, InMemoryUploadedFile
+from django.core.files.uploadedfile import SimpleUploadedFile
 from decimal import Decimal
 from semelVoter.serializers import CreateSemlaSerializer
 from semelVoter.models import Semla, SemlaImage
@@ -67,25 +67,6 @@ class TestCreateSemlaSerializer:
         assert serializer.is_valid()
         semla = serializer.save()
         assert semla.vegan is True
-        
-        # Without picture field (should be optional)
-        data = {
-            'bakery': 'Test',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert serializer.is_valid()
-        semla = serializer.save()
-        assert semla.picture == ''
-        
-        # With picture field
-        data['picture'] = 'https://example.com/images/test.jpg'
-        serializer = CreateSemlaSerializer(data=data)
-        assert serializer.is_valid()
-        semla = serializer.save()
-        assert semla.picture == 'https://example.com/images/test.jpg'
 
     def test_price_must_be_positive(self):
         """Test that price must be a positive value"""
@@ -208,120 +189,6 @@ class TestCreateSemlaSerializer:
         assert semla.city == 'Stockholm'
         assert semla.kind == 'Traditional'
 
-    def test_picture_upload_rejects_invalid_content_type(self):
-        """Test that non-image uploads are rejected"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': SimpleUploadedFile(
-                'not-an-image.txt',
-                b'not-an-image',
-                content_type='text/plain'
-            ),
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert not serializer.is_valid()
-        assert 'picture' in serializer.errors
-
-    def test_picture_upload_rejects_large_files(self):
-        """Test that oversized image uploads are rejected"""
-        oversized_content = b'a' * (5 * 1024 * 1024 + 1)
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': SimpleUploadedFile(
-                'large-image.jpg',
-                oversized_content,
-                content_type='image/jpeg'
-            ),
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert not serializer.is_valid()
-        assert 'picture' in serializer.errors
-
-    def test_picture_upload_accepts_valid_image(self):
-        """Test that valid image uploads are accepted"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': SimpleUploadedFile(
-                'small-image.jpg',
-                b'valid-image-bytes',
-                content_type='image/jpeg'
-            ),
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert serializer.is_valid(), f"Expected image upload to be valid but got errors: {serializer.errors}"
-
-    def test_picture_url_validation_rejects_javascript_urls(self):
-        """Test that javascript: URLs are rejected for security"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': 'javascript:alert("xss")',
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert not serializer.is_valid()
-        assert 'picture' in serializer.errors
-
-    def test_picture_url_validation_rejects_data_urls(self):
-        """Test that data: URLs are rejected for security"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': 'data:text/html,<script>alert("xss")</script>',
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert not serializer.is_valid()
-        assert 'picture' in serializer.errors
-
-    def test_picture_url_validation_accepts_https_urls(self):
-        """Test that valid HTTPS URLs are accepted"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': 'https://cdn.example.com/images/semla.jpg',
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert serializer.is_valid(), f"Expected HTTPS URL to be valid but got errors: {serializer.errors}"
-
-    def test_picture_url_validation_accepts_http_urls(self):
-        """Test that valid HTTP URLs are accepted"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': 'http://example.com/images/semla.jpg',
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert serializer.is_valid(), f"Expected HTTP URL to be valid but got errors: {serializer.errors}"
-
-    def test_picture_url_validation_rejects_invalid_urls(self):
-        """Test that invalid URL strings are rejected"""
-        data = {
-            'bakery': 'Test Bakery',
-            'city': 'Stockholm',
-            'price': '45.00',
-            'kind': 'Traditional',
-            'picture': 'not-a-valid-url',
-        }
-        serializer = CreateSemlaSerializer(data=data)
-        assert not serializer.is_valid()
-        assert 'picture' in serializer.errors
-
 
 @pytest.mark.django_db
 class TestCreateSemlaEndpoint:
@@ -354,61 +221,11 @@ class TestCreateSemlaEndpoint:
             'price': '55.00',
             'kind': 'Vegan',
             'vegan': True,
-            'picture': 'https://example.com/images/petrus-vegan.jpg',
         }
         response = client.post('/api/semlor/create', data, content_type='application/json')
         
         assert response.status_code == 201
         assert response.json()['vegan'] is True
-        assert response.json()['picture'] == 'https://example.com/images/petrus-vegan.jpg'
-
-    def test_create_semla_with_image_upload(self, client, monkeypatch):
-        """Test creation with multipart image upload stores URL"""
-        saved_paths = []
-
-        def fake_save(path, file_obj):
-            # Validate that file_obj is an InMemoryUploadedFile instance
-            # (Django converts SimpleUploadedFile to InMemoryUploadedFile during request processing)
-            assert isinstance(file_obj, InMemoryUploadedFile), \
-                f"Expected InMemoryUploadedFile, got {type(file_obj)}"
-            # Validate file properties
-            assert file_obj.name == 'test-image.jpg', \
-                f"Expected file name 'test-image.jpg', got '{file_obj.name}'"
-            assert file_obj.content_type == 'image/jpeg', \
-                f"Expected content type 'image/jpeg', got '{file_obj.content_type}'"
-            # Read and validate file content
-            content = file_obj.read()
-            assert content == b'valid-image-bytes', \
-                f"Expected file content to match uploaded bytes, got {content!r}"
-            # Reset file pointer to beginning for any subsequent reads
-            file_obj.seek(0)
-            saved_paths.append(path)
-            return 'semlor/uploads/test-image.jpg'
-
-        def fake_url(path):
-            return f"https://cdn.example.com/{path}"
-
-        import semelVoter.views as views
-        monkeypatch.setattr(views.default_storage, 'save', fake_save)
-        monkeypatch.setattr(views.default_storage, 'url', fake_url)
-
-        data = {
-            'bakery': 'Image Bakery',
-            'city': 'Stockholm',
-            'price': '60.00',
-            'kind': 'Traditional',
-            'picture': SimpleUploadedFile(
-                'test-image.jpg',
-                b'valid-image-bytes',
-                content_type='image/jpeg'
-            ),
-        }
-
-        response = client.post('/api/semlor/create', data)
-
-        assert response.status_code == 201
-        assert response.json()['picture'] == 'https://cdn.example.com/semlor/uploads/test-image.jpg'
-        assert saved_paths, "Expected storage.save to be called"
 
     def test_create_semla_invalid_data(self, client):
         """Test that invalid data returns 400"""
@@ -1029,3 +846,69 @@ class TestCreateSemlaWithMultipleImages:
         # The UUID in response should match what was returned by upload function
         assert image_data['id'] == str(captured_uuid[0])
         assert str(captured_uuid[0]) in image_data['image_url']
+
+
+@pytest.mark.django_db
+class TestLegacyPictureFieldCleanup:
+    """Test suite for verifying old picture field is no longer used"""
+    
+    def test_old_picture_field_not_populated_on_new_semla(self, client, monkeypatch):
+        """Test that the legacy Semla.picture field stays empty for new uploads"""
+        def mock_upload(file):
+            import uuid as uuid_module
+            image_uuid = uuid_module.uuid4()
+            return (image_uuid, f"https://bucket.s3.amazonaws.com/semlor/{image_uuid}.jpg")
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload)
+        
+        data = {
+            'bakery': 'New Upload Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        files = {
+            'pictures': [
+                SimpleUploadedFile('img.jpg', b'bytes', content_type='image/jpeg'),
+            ]
+        }
+        
+        response = client.post('/api/semlor/create', {**data, **files})
+        
+        assert response.status_code == 201
+        # New images should be in images[], not picture field
+        assert len(response.json()['images']) == 1
+        # Legacy picture field should be empty
+        assert response.json()['picture'] == ''
+        
+        # Verify in database
+        semla = Semla.objects.get(pk=response.json()['id'])
+        assert semla.picture == ''
+    
+    def test_single_picture_upload_field_ignored(self, client, monkeypatch):
+        """Test that old single picture upload field is ignored"""
+        def mock_upload(file):
+            import uuid as uuid_module
+            image_uuid = uuid_module.uuid4()
+            return (image_uuid, f"https://bucket.s3.amazonaws.com/semlor/{image_uuid}.jpg")
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload)
+        
+        data = {
+            'bakery': 'Old Field Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+            # Old single picture field - should be ignored
+            'picture': SimpleUploadedFile('old.jpg', b'old-bytes', content_type='image/jpeg'),
+        }
+        
+        response = client.post('/api/semlor/create', data)
+        
+        assert response.status_code == 201
+        # No images should be created from old picture field
+        assert response.json()['images'] == []
+        # Legacy picture field should not be populated
+        assert response.json()['picture'] == ''
