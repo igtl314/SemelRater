@@ -1,5 +1,5 @@
 import pytest
-git add . && git commit -m 'feat: add upload_image_to_s3 utility with UUID naming'import uuid
+import uuid
 from django.core.files.uploadedfile import SimpleUploadedFile, InMemoryUploadedFile
 from decimal import Decimal
 from semelVoter.serializers import CreateSemlaSerializer
@@ -796,3 +796,79 @@ class TestUploadImageToS3:
         file = SimpleUploadedFile('c.txt', b'bytes', content_type='image/webp')
         upload_image_to_s3(file)
         assert saved_paths[-1].endswith('.webp')
+
+
+@pytest.mark.django_db
+class TestSemlaImageSerializer:
+    """Test suite for SemlaImageSerializer"""
+    
+    def test_serializes_uuid_and_url(self):
+        """Test that SemlaImageSerializer outputs id and image_url"""
+        from semelVoter.serializers import SemlaImageSerializer
+        
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        image_uuid = uuid.uuid4()
+        image = SemlaImage.objects.create(
+            id=image_uuid,
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/test.jpg'
+        )
+        
+        serializer = SemlaImageSerializer(image)
+        data = serializer.data
+        
+        assert data['id'] == str(image_uuid)
+        assert data['image_url'] == 'https://bucket.s3.amazonaws.com/semlor/test.jpg'
+
+
+@pytest.mark.django_db
+class TestSemlaSerializerWithImages:
+    """Test suite for SemlaSerializer with images field"""
+    
+    def test_includes_images_list(self):
+        """Test that SemlaSerializer includes images list"""
+        from semelVoter.serializers import SemlaSerializer
+        
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/img1.jpg'
+        )
+        SemlaImage.objects.create(
+            semla=semla,
+            image_url='https://bucket.s3.amazonaws.com/semlor/img2.jpg'
+        )
+        
+        serializer = SemlaSerializer(semla)
+        data = serializer.data
+        
+        assert 'images' in data
+        assert len(data['images']) == 2
+        assert data['images'][0]['image_url'] == 'https://bucket.s3.amazonaws.com/semlor/img1.jpg'
+    
+    def test_empty_images_list_when_no_images(self):
+        """Test that images is empty list when semla has no images"""
+        from semelVoter.serializers import SemlaSerializer
+        
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        
+        serializer = SemlaSerializer(semla)
+        data = serializer.data
+        
+        assert 'images' in data
+        assert data['images'] == []
