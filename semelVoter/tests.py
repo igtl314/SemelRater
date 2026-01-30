@@ -390,6 +390,86 @@ class TestCreateSemlaSerializer:
         assert serializer.is_valid(), f"Expected relative path to be valid but got errors: {serializer.errors}"
         assert serializer.validated_data['picture'] == '/images/semla.jpg'
 
+    def test_picture_url_rejects_mixed_case_javascript(self):
+        """Test that mixed-case javascript: URLs are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'JaVaScRiPt:alert("XSS")',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+
+    def test_picture_url_rejects_blob_scheme(self):
+        """Test that blob: URLs are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'blob:https://example.com/some-blob-id',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+        assert 'blob:' in str(serializer.errors['picture'][0]).lower()
+
+    def test_picture_url_rejects_about_scheme(self):
+        """Test that about: URLs are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': 'about:blank',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+        assert 'about:' in str(serializer.errors['picture'][0]).lower()
+
+    def test_picture_url_strips_whitespace_from_valid_url(self):
+        """Test that whitespace is stripped from valid URLs"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': '  https://example.com/image.jpg  ',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert serializer.is_valid(), f"Expected valid URL with whitespace to be accepted but got errors: {serializer.errors}"
+        assert serializer.validated_data['picture'] == 'https://example.com/image.jpg'
+
+    def test_picture_url_rejects_dangerous_scheme_with_leading_whitespace(self):
+        """Test that dangerous schemes with leading whitespace are rejected"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': '  javascript:alert("XSS")',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert not serializer.is_valid()
+        assert 'picture' in serializer.errors
+
+    def test_picture_url_strips_whitespace_from_relative_path(self):
+        """Test that whitespace is stripped from relative paths"""
+        data = {
+            'bakery': 'Test Bakery',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+            'picture': '  /images/semla.jpg  ',
+        }
+        serializer = CreateSemlaSerializer(data=data)
+        assert serializer.is_valid(), f"Expected relative path with whitespace to be accepted but got errors: {serializer.errors}"
+        assert serializer.validated_data['picture'] == '/images/semla.jpg'
+
 
 @pytest.mark.django_db
 class TestCreateSemlaEndpoint:

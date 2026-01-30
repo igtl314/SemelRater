@@ -48,13 +48,16 @@ class CreateSemlaSerializer(serializers.ModelSerializer):
             return value
         
         if isinstance(value, str):
-            # Validate URL format and ensure only safe protocols
-            if value.strip() == '':
+            # Strip whitespace once and work with the stripped value consistently
+            value = value.strip()
+            
+            # Handle empty string after stripping
+            if value == '':
                 return ''
             
-            # Check for dangerous URL schemes
-            dangerous_schemes = ['javascript:', 'data:', 'file:', 'vbscript:']
-            value_lower = value.lower().strip()
+            # Check for dangerous URL schemes (case-insensitive)
+            dangerous_schemes = ['javascript:', 'data:', 'file:', 'vbscript:', 'blob:', 'about:']
+            value_lower = value.lower()
             for scheme in dangerous_schemes:
                 if value_lower.startswith(scheme):
                     raise serializers.ValidationError(
