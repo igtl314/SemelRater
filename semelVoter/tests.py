@@ -1,5 +1,5 @@
 import pytest
-import uuid
+git add . && git commit -m 'feat: add upload_image_to_s3 utility with UUID naming'import uuid
 from django.core.files.uploadedfile import SimpleUploadedFile, InMemoryUploadedFile
 from decimal import Decimal
 from semelVoter.serializers import CreateSemlaSerializer
@@ -692,3 +692,107 @@ class TestSemlaImageModel:
         images = list(semla.images.all())
         assert images[0] == image1
         assert images[1] == image2
+
+
+class TestUploadImageToS3:
+    """Test suite for S3 image upload utility"""
+    
+    def test_upload_returns_uuid_and_url_on_success(self, monkeypatch):
+        """Test that successful upload returns (uuid, url) tuple"""
+        from semelVoter.utils import upload_image_to_s3
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        # Mock successful S3 upload
+        def mock_save(path, file_obj):
+            return path
+        
+        def mock_url(path):
+            return f"https://bucket.s3.amazonaws.com/{path}"
+        
+        from django.core.files.storage import default_storage
+        monkeypatch.setattr(default_storage, 'save', mock_save)
+        monkeypatch.setattr(default_storage, 'url', mock_url)
+        
+        file = SimpleUploadedFile('test.jpg', b'image-bytes', content_type='image/jpeg')
+        result = upload_image_to_s3(file)
+        
+        assert result is not None
+        image_uuid, url = result
+        assert isinstance(image_uuid, uuid.UUID)
+        assert str(image_uuid) in url
+        assert url.endswith('.jpg')
+    
+    def test_upload_uses_uuid_as_filename(self, monkeypatch):
+        """Test that the S3 key uses UUID as filename"""
+        from semelVoter.utils import upload_image_to_s3
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        saved_path = None
+        
+        def mock_save(path, file_obj):
+            nonlocal saved_path
+            saved_path = path
+            return path
+        
+        def mock_url(path):
+            return f"https://bucket.s3.amazonaws.com/{path}"
+        
+        from django.core.files.storage import default_storage
+        monkeypatch.setattr(default_storage, 'save', mock_save)
+        monkeypatch.setattr(default_storage, 'url', mock_url)
+        
+        file = SimpleUploadedFile('original-name.png', b'image-bytes', content_type='image/png')
+        result = upload_image_to_s3(file)
+        
+        image_uuid, _ = result
+        # Path should be semlor/{uuid}.png, not original filename
+        assert saved_path == f"semlor/{image_uuid}.png"
+    
+    def test_upload_returns_none_on_failure(self, monkeypatch):
+        """Test that failed upload returns None"""
+        from semelVoter.utils import upload_image_to_s3
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        def mock_save(path, file_obj):
+            raise Exception("S3 connection failed")
+        
+        from django.core.files.storage import default_storage
+        monkeypatch.setattr(default_storage, 'save', mock_save)
+        
+        file = SimpleUploadedFile('test.jpg', b'image-bytes', content_type='image/jpeg')
+        result = upload_image_to_s3(file)
+        
+        assert result is None
+    
+    def test_upload_extracts_extension_from_content_type(self, monkeypatch):
+        """Test that file extension is derived from content type"""
+        from semelVoter.utils import upload_image_to_s3
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        saved_paths = []
+        
+        def mock_save(path, file_obj):
+            saved_paths.append(path)
+            return path
+        
+        def mock_url(path):
+            return f"https://bucket.s3.amazonaws.com/{path}"
+        
+        from django.core.files.storage import default_storage
+        monkeypatch.setattr(default_storage, 'save', mock_save)
+        monkeypatch.setattr(default_storage, 'url', mock_url)
+        
+        # Test JPEG
+        file = SimpleUploadedFile('a.txt', b'bytes', content_type='image/jpeg')
+        upload_image_to_s3(file)
+        assert saved_paths[-1].endswith('.jpg')
+        
+        # Test PNG
+        file = SimpleUploadedFile('b.txt', b'bytes', content_type='image/png')
+        upload_image_to_s3(file)
+        assert saved_paths[-1].endswith('.png')
+        
+        # Test WebP
+        file = SimpleUploadedFile('c.txt', b'bytes', content_type='image/webp')
+        upload_image_to_s3(file)
+        assert saved_paths[-1].endswith('.webp')
