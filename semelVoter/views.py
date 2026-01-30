@@ -4,11 +4,13 @@ from .models import Semla, Ratings, RatingTracker, SemlaCreationTracker
 from rest_framework.response import Response
 from .serializers import SemlaSerializer, CommentSerializer, CreateSemlaSerializer
 from ipware import get_client_ip
+from django.core.files.storage import default_storage
 
 
 # Create your views here.
 from rest_framework.views import APIView
 from rest_framework import status
+from rest_framework.parsers import JSONParser, FormParser, MultiPartParser
 
 class SelmaViewList(APIView):
     def get(self, request):
@@ -84,6 +86,8 @@ class SemlaCommentView(APIView):
 
 
 class CreateSemlaView(APIView):
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
+
     def post(self, request):
         """
         Create a new Semla entry.
@@ -112,7 +116,13 @@ class CreateSemlaView(APIView):
             # Wrap creation and counter increment in a transaction
             # to ensure atomicity and prevent inconsistent state
             with transaction.atomic():
-                semla = serializer.save()
+                picture = serializer.validated_data.get('picture')
+                if picture and not isinstance(picture, str):
+                    saved_path = default_storage.save(f"semlor/uploads/{picture.name}", picture)
+                    picture_url = default_storage.url(saved_path)
+                    semla = serializer.save(picture=picture_url)
+                else:
+                    semla = serializer.save()
                 # Increment the creation count
                 SemlaCreationTracker.increment_count(ip_address, user_agent)
             return Response(

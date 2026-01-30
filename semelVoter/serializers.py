@@ -1,4 +1,7 @@
 from rest_framework import serializers
+from django.core.files.uploadedfile import UploadedFile
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError as DjangoValidationError
 from decimal import Decimal
 from .models import Semla, Ratings
 
@@ -9,8 +12,24 @@ class SemlaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class PictureField(serializers.Field):
+    def to_internal_value(self, data):
+        if data in (None, ''):
+            return data
+        if isinstance(data, str):
+            return data
+        if isinstance(data, UploadedFile):
+            return data
+        raise serializers.ValidationError('Invalid file upload.')
+
+    def to_representation(self, value):
+        return value
+
+
 class CreateSemlaSerializer(serializers.ModelSerializer):
     """Serializer for creating new Semla entries"""
+
+    picture = PictureField(required=False, allow_null=True)
     
     class Meta:
         model = Semla
@@ -21,8 +40,31 @@ class CreateSemlaSerializer(serializers.ModelSerializer):
             'price': {'required': True},
             'kind': {'required': True},
             'vegan': {'required': False, 'default': False},
-            'picture': {'required': False, 'default': '', 'allow_blank': True},
+            'picture': {'required': False},
         }
+
+    def validate_picture(self, value):
+        if value in (None, ''):
+            return value
+        if isinstance(value, str):
+            # Validate URL to prevent malicious URLs like javascript: or data: URIs
+            validator = URLValidator(schemes=['http', 'https'])
+            try:
+                validator(value)
+            except DjangoValidationError:
+                raise serializers.ValidationError('Invalid URL. Only HTTP and HTTPS URLs are allowed.')
+            return value
+
+        allowed_types = {'image/jpeg', 'image/png', 'image/webp'}
+        content_type = getattr(value, 'content_type', None)
+        if content_type not in allowed_types:
+            raise serializers.ValidationError('Only JPEG, PNG, and WebP images are allowed.')
+
+        max_size = 5 * 1024 * 1024
+        if value.size > max_size:
+            raise serializers.ValidationError('Image size must be 5MB or less.')
+
+        return value
 
     def validate_price(self, value):
         """Ensure price is positive"""

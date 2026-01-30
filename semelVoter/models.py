@@ -22,6 +22,7 @@ class Semla(models.Model):
             self.save()
         except Exception as e:
             print(f"Error updating rating: {e}")
+
 class Ratings(models.Model):
     semla = models.ForeignKey(Semla, on_delete=models.CASCADE, related_name='ratings')
     rating = models.IntegerField()
@@ -35,6 +36,7 @@ class Ratings(models.Model):
         Get all ratings for a specific Semla.
         """
         return cls.objects.filter(semla_id=semla_id).order_by('-date').exclude(comment__isnull=True)
+    
 class RatingTracker(models.Model):
     ip_address = models.CharField(max_length=45)  # IPv6 can be long
     user_agent = models.TextField()
