@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   Navbar as HeroUINavbar,
   NavbarContent,
@@ -17,6 +20,8 @@ import clsx from "clsx";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { SemelCreatorModal } from "@/components/SemelCreatorModal";
+import { useSemelContext } from "@/app/SemelProvider";
 import {
   TwitterIcon,
   GithubIcon,
@@ -27,6 +32,9 @@ import {
 } from "@/components/icons";
 
 export const Navbar = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { refreshSemels } = useSemelContext();
+
   const searchInput = (
     <Input
       aria-label="Search"
@@ -104,6 +112,14 @@ export const Navbar = () => {
             Sponsor
           </Button>
         </NavbarItem>
+        <NavbarItem>
+          <Button
+            color="primary"
+            onPress={() => setIsModalOpen(true)}
+          >
+            Create Semla
+          </Button>
+        </NavbarItem>
       </NavbarContent>
 
       <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
@@ -136,6 +152,12 @@ export const Navbar = () => {
           ))}
         </div>
       </NavbarMenu>
+
+      <SemelCreatorModal
+        isOpen={isModalOpen}
+        onOpenChange={() => setIsModalOpen(false)}
+        onSuccess={refreshSemels}
+      />
     </HeroUINavbar>
   );
 };

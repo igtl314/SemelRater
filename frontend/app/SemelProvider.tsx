@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 import { Semel, SemelContextType } from "@/types";
 import { getSemels } from "@/app/actions/semel";
@@ -11,6 +11,8 @@ export const SemelContext = createContext<SemelContextType>({
   error: null,
   refreshSemels: () => {},
 });
+
+export const useSemelContext = () => useContext(SemelContext);
 
 export const SemelProvider = ({ children }: { children: React.ReactNode }) => {
   const [semels, setSemels] = useState<Semel[]>([]);

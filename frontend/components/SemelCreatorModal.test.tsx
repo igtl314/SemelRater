@@ -149,4 +149,73 @@ describe('SemelCreatorModal', () => {
     expect(input.files?.[0]).toBe(file);
     expect(input.files?.length).toBe(1);
   });
+
+  it('displays error when file is too large', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <SemelCreatorModal 
+        isOpen={true} 
+        onOpenChange={() => {}} 
+        onSuccess={mockRefreshSemels}
+      />
+    );
+
+    // Create a file larger than 5MB (5 * 1024 * 1024 = 5242880 bytes)
+    const largeContent = new Array(6 * 1024 * 1024).fill('a').join('');
+    const largeFile = new File([largeContent], 'large.jpg', { type: 'image/jpeg' });
+    
+    const input = screen.getByLabelText(/image/i) as HTMLInputElement;
+    await user.upload(input, largeFile);
+
+    // Should display validation error
+    expect(screen.getByText(/file size must be less than 5mb/i)).toBeInTheDocument();
+  });
+
+  it('displays error when file type is invalid', async () => {
+    render(
+      <SemelCreatorModal 
+        isOpen={true} 
+        onOpenChange={() => {}} 
+        onSuccess={mockRefreshSemels}
+      />
+    );
+
+    // Create a GIF file (not allowed)
+    const gifFile = new File(['test'], 'test.gif', { type: 'image/gif' });
+    
+    const input = screen.getByLabelText(/image/i) as HTMLInputElement;
+    
+    // Use fireEvent to bypass accept attribute filtering
+    fireEvent.change(input, { target: { files: [gifFile] } });
+
+    // Should display validation error
+    expect(screen.getByText(/only jpeg, png, and webp images are allowed/i)).toBeInTheDocument();
+  });
+
+  it('clears image error when valid file is selected', async () => {
+    render(
+      <SemelCreatorModal 
+        isOpen={true} 
+        onOpenChange={() => {}} 
+        onSuccess={mockRefreshSemels}
+      />
+    );
+
+    const input = screen.getByLabelText(/image/i) as HTMLInputElement;
+
+    // First, upload an invalid file using fireEvent  
+    const gifFile = new File(['test'], 'test.gif', { type: 'image/gif' });
+    fireEvent.change(input, { target: { files: [gifFile] } });
+
+    // Error should be visible
+    expect(screen.getByText(/only jpeg, png, and webp images are allowed/i)).toBeInTheDocument();
+
+    // Now upload a valid file
+    const validFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [validFile] } });
+
+    // Error should be cleared
+    expect(screen.queryByText(/only jpeg, png, and webp images are allowed/i)).not.toBeInTheDocument();
+  });
 });
