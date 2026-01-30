@@ -3,6 +3,7 @@ from django.db import transaction
 from .models import Semla, Ratings, RatingTracker, SemlaCreationTracker
 from rest_framework.response import Response
 from .serializers import SemlaSerializer, CommentSerializer, CreateSemlaSerializer
+from ipware import get_client_ip
 
 
 # Create your views here.
@@ -28,8 +29,15 @@ class RateSemlaView(APIView):
         """
         Rate a specific Semla.
         """
-        # Get IP address and user agent
-        ip_address = self.get_client_ip(request)
+        # Get IP address and user agent - ipware validates X-Forwarded-For against trusted proxies
+        client_ip, is_routable = get_client_ip(request)
+        if not client_ip:
+            # Reject requests where IP cannot be determined to prevent rate limit sharing
+            return Response(
+                {"error": "Unable to determine client IP address"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        ip_address = client_ip
         user_agent = request.META.get('HTTP_USER_AGENT', '')
         # Check if this sender has exceeded the daily limit
         daily_count = RatingTracker.get_today_count(ip_address, user_agent)
@@ -59,14 +67,6 @@ class RateSemlaView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
     
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
-    
 class SemlaCommentView(APIView):
     def get(self, request, pk):
         """
@@ -88,8 +88,15 @@ class CreateSemlaView(APIView):
         """
         Create a new Semla entry.
         """
-        # Get IP address and user agent for rate limiting
-        ip_address = self.get_client_ip(request)
+        # Get IP address and user agent for rate limiting - ipware validates X-Forwarded-For against trusted proxies
+        client_ip, is_routable = get_client_ip(request)
+        if not client_ip:
+            # Reject requests where IP cannot be determined to prevent rate limit sharing
+            return Response(
+                {"error": "Unable to determine client IP address"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        ip_address = client_ip
         user_agent = request.META.get('HTTP_USER_AGENT', '')
         
         # Check if this sender has exceeded the daily limit
@@ -116,11 +123,3 @@ class CreateSemlaView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
-    
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
