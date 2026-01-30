@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from django.core.files.uploadedfile import UploadedFile
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError as DjangoValidationError
 from decimal import Decimal
 from .models import Semla, Ratings
 
@@ -45,6 +47,12 @@ class CreateSemlaSerializer(serializers.ModelSerializer):
         if value in (None, ''):
             return value
         if isinstance(value, str):
+            # Validate URL to prevent malicious URLs like javascript: or data: URIs
+            validator = URLValidator(schemes=['http', 'https'])
+            try:
+                validator(value)
+            except DjangoValidationError:
+                raise serializers.ValidationError('Invalid URL. Only HTTP and HTTPS URLs are allowed.')
             return value
 
         allowed_types = {'image/jpeg', 'image/png', 'image/webp'}
