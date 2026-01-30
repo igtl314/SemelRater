@@ -298,6 +298,39 @@ class TestCreateSemlaEndpoint:
         assert response.json()['vegan'] is True
         assert response.json()['picture'] == '/images/petrus-vegan.jpg'
 
+    def test_create_semla_with_image_upload(self, client, monkeypatch):
+        """Test creation with multipart image upload stores URL"""
+        saved_paths = []
+
+        def fake_save(path, file_obj):
+            saved_paths.append(path)
+            return 'semlor/uploads/test-image.jpg'
+
+        def fake_url(path):
+            return f"https://cdn.example.com/{path}"
+
+        import semelVoter.views as views
+        monkeypatch.setattr(views.default_storage, 'save', fake_save)
+        monkeypatch.setattr(views.default_storage, 'url', fake_url)
+
+        data = {
+            'bakery': 'Image Bakery',
+            'city': 'Stockholm',
+            'price': '60.00',
+            'kind': 'Traditional',
+            'picture': SimpleUploadedFile(
+                'test-image.jpg',
+                b'valid-image-bytes',
+                content_type='image/jpeg'
+            ),
+        }
+
+        response = client.post('/api/semlor/create', data)
+
+        assert response.status_code == 201
+        assert response.json()['picture'] == 'https://cdn.example.com/semlor/uploads/test-image.jpg'
+        assert saved_paths, "Expected storage.save to be called"
+
     def test_create_semla_invalid_data(self, client):
         """Test that invalid data returns 400"""
         # Missing required field
