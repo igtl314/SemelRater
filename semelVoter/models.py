@@ -1,9 +1,7 @@
 import django
 from django.db import models
 from django.utils.timezone import localdate
-from datetime import date
 # Create your models here.
-from django.db import models
 class Semla(models.Model):
     bakery = models.CharField(max_length=255)
     city = models.CharField(max_length=255)
@@ -51,7 +49,7 @@ class RatingTracker(models.Model):
         """
         Get the count of ratings for today for a specific IP address and user agent.
         """
-        today = date.today()
+        today = localdate()
         try:
             tracker = cls.objects.get(
                 ip_address=ip_address,
@@ -67,7 +65,7 @@ class RatingTracker(models.Model):
         """
         Increment the count for today's date for a specific IP address and user agent.
         """
-        today = date.today()
+        today = localdate()
         tracker, created = cls.objects.get_or_create(
             ip_address=ip_address,
             user_agent=user_agent,
