@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.db import transaction
 from .models import Semla, Ratings, RatingTracker, SemlaCreationTracker
 from rest_framework.response import Response
 from .serializers import SemlaSerializer, CommentSerializer, CreateSemlaSerializer
@@ -101,9 +102,12 @@ class CreateSemlaView(APIView):
         
         serializer = CreateSemlaSerializer(data=request.data)
         if serializer.is_valid():
-            semla = serializer.save()
-            # Increment the creation count
-            SemlaCreationTracker.increment_count(ip_address, user_agent)
+            # Wrap creation and counter increment in a transaction
+            # to ensure atomicity and prevent inconsistent state
+            with transaction.atomic():
+                semla = serializer.save()
+                # Increment the creation count
+                SemlaCreationTracker.increment_count(ip_address, user_agent)
             return Response(
                 SemlaSerializer(semla).data,
                 status=status.HTTP_201_CREATED
