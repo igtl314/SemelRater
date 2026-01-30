@@ -1,5 +1,5 @@
 import pytest
-from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.uploadedfile import SimpleUploadedFile, InMemoryUploadedFile
 from decimal import Decimal
 from semelVoter.serializers import CreateSemlaSerializer
 from semelVoter.models import Semla
@@ -303,6 +303,19 @@ class TestCreateSemlaEndpoint:
         saved_paths = []
 
         def fake_save(path, file_obj):
+            # Validate that file_obj is an InMemoryUploadedFile instance
+            # (Django converts SimpleUploadedFile to InMemoryUploadedFile during request processing)
+            assert isinstance(file_obj, InMemoryUploadedFile), \
+                f"Expected InMemoryUploadedFile, got {type(file_obj)}"
+            # Validate file properties
+            assert file_obj.name == 'test-image.jpg', \
+                f"Expected file name 'test-image.jpg', got '{file_obj.name}'"
+            assert file_obj.content_type == 'image/jpeg', \
+                f"Expected content type 'image/jpeg', got '{file_obj.content_type}'"
+            # Read and validate file content
+            content = file_obj.read()
+            assert content == b'valid-image-bytes', \
+                f"Expected file content to match uploaded bytes, got {content!r}"
             saved_paths.append(path)
             return 'semlor/uploads/test-image.jpg'
 
