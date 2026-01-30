@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SemelCreatorModal } from './SemelCreatorModal';
 
 // Mock the createSemel action
 vi.mock('@/app/actions/semel', () => ({
@@ -17,6 +16,7 @@ vi.mock('@/app/SemelProvider', () => ({
 }));
 
 import { createSemel } from '@/app/actions/semel';
+import { SemelCreatorModal } from './SemelCreatorModal';
 
 describe('SemelCreatorModal', () => {
   beforeEach(() => {
