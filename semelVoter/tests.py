@@ -872,3 +872,160 @@ class TestSemlaSerializerWithImages:
         
         assert 'images' in data
         assert data['images'] == []
+
+
+@pytest.mark.django_db
+class TestCreateSemlaWithMultipleImages:
+    """Test suite for creating Semla with multiple image uploads"""
+    
+    def test_create_semla_with_multiple_images(self, client, monkeypatch):
+        """Test that multiple images are uploaded and SemlaImage rows created"""
+        uploaded_files = []
+        
+        def mock_upload(file):
+            import uuid as uuid_module
+            image_uuid = uuid_module.uuid4()
+            url = f"https://bucket.s3.amazonaws.com/semlor/{image_uuid}.jpg"
+            uploaded_files.append((image_uuid, url))
+            return (image_uuid, url)
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload)
+        
+        data = {
+            'bakery': 'Multi Image Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        files = {
+            'pictures': [
+                SimpleUploadedFile('img1.jpg', b'bytes1', content_type='image/jpeg'),
+                SimpleUploadedFile('img2.jpg', b'bytes2', content_type='image/jpeg'),
+            ]
+        }
+        
+        response = client.post('/api/semlor/create', {**data, **files})
+        
+        assert response.status_code == 201
+        assert 'images' in response.json()
+        assert len(response.json()['images']) == 2
+        
+        # Verify SemlaImage rows were created
+        semla_id = response.json()['id']
+        semla = Semla.objects.get(pk=semla_id)
+        assert semla.images.count() == 2
+    
+    def test_create_semla_succeeds_when_all_uploads_fail(self, client, monkeypatch):
+        """Test that Semla is created even if all image uploads fail"""
+        def mock_upload_fail(file):
+            return None  # Simulate S3 failure
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload_fail)
+        
+        data = {
+            'bakery': 'Failing Upload Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        files = {
+            'pictures': [
+                SimpleUploadedFile('img1.jpg', b'bytes1', content_type='image/jpeg'),
+            ]
+        }
+        
+        response = client.post('/api/semlor/create', {**data, **files})
+        
+        # Semla should still be created
+        assert response.status_code == 201
+        assert response.json()['images'] == []
+        
+        # Verify Semla exists in database
+        semla_id = response.json()['id']
+        assert Semla.objects.filter(pk=semla_id).exists()
+    
+    def test_create_semla_with_partial_upload_failure(self, client, monkeypatch):
+        """Test that Semla is created with only successfully uploaded images"""
+        call_count = [0]
+        
+        def mock_upload_partial(file):
+            import uuid as uuid_module
+            call_count[0] += 1
+            if call_count[0] == 1:
+                # First upload succeeds
+                image_uuid = uuid_module.uuid4()
+                return (image_uuid, f"https://bucket.s3.amazonaws.com/semlor/{image_uuid}.jpg")
+            else:
+                # Second upload fails
+                return None
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload_partial)
+        
+        data = {
+            'bakery': 'Partial Upload Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        files = {
+            'pictures': [
+                SimpleUploadedFile('img1.jpg', b'bytes1', content_type='image/jpeg'),
+                SimpleUploadedFile('img2.jpg', b'bytes2', content_type='image/jpeg'),
+            ]
+        }
+        
+        response = client.post('/api/semlor/create', {**data, **files})
+        
+        assert response.status_code == 201
+        # Only one image should be in the response
+        assert len(response.json()['images']) == 1
+    
+    def test_create_semla_without_images_still_works(self, client):
+        """Test that creating Semla without any images still works"""
+        data = {
+            'bakery': 'No Image Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        
+        response = client.post('/api/semlor/create', data, content_type='application/json')
+        
+        assert response.status_code == 201
+        assert response.json()['images'] == []
+    
+    def test_semla_image_uuid_matches_s3_filename(self, client, monkeypatch):
+        """Test that SemlaImage.id matches the UUID used in S3 filename"""
+        captured_uuid = [None]
+        
+        def mock_upload(file):
+            import uuid as uuid_module
+            image_uuid = uuid_module.uuid4()
+            captured_uuid[0] = image_uuid
+            return (image_uuid, f"https://bucket.s3.amazonaws.com/semlor/{image_uuid}.jpg")
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload)
+        
+        data = {
+            'bakery': 'UUID Test Bakery',
+            'city': 'Stockholm',
+            'price': '50.00',
+            'kind': 'Traditional',
+        }
+        files = {
+            'pictures': [
+                SimpleUploadedFile('img.jpg', b'bytes', content_type='image/jpeg'),
+            ]
+        }
+        
+        response = client.post('/api/semlor/create', {**data, **files})
+        
+        assert response.status_code == 201
+        image_data = response.json()['images'][0]
+        # The UUID in response should match what was returned by upload function
+        assert image_data['id'] == str(captured_uuid[0])
+        assert str(captured_uuid[0]) in image_data['image_url']

@@ -1,10 +1,14 @@
+import logging
 from django.shortcuts import render
 from django.db import transaction
-from .models import Semla, Ratings, RatingTracker, SemlaCreationTracker
+from .models import Semla, Ratings, RatingTracker, SemlaCreationTracker, SemlaImage
 from rest_framework.response import Response
 from .serializers import SemlaSerializer, CommentSerializer, CreateSemlaSerializer
 from ipware import get_client_ip
 from django.core.files.storage import default_storage
+from .utils import upload_image_to_s3
+
+logger = logging.getLogger(__name__)
 
 
 # Create your views here.
@@ -116,6 +120,7 @@ class CreateSemlaView(APIView):
             # Wrap creation and counter increment in a transaction
             # to ensure atomicity and prevent inconsistent state
             with transaction.atomic():
+                # Handle legacy single picture field
                 picture = serializer.validated_data.get('picture')
                 if picture and not isinstance(picture, str):
                     saved_path = default_storage.save(f"semlor/uploads/{picture.name}", picture)
@@ -123,6 +128,21 @@ class CreateSemlaView(APIView):
                     semla = serializer.save(picture=picture_url)
                 else:
                     semla = serializer.save()
+                
+                # Handle multiple image uploads via pictures[]
+                pictures = request.FILES.getlist('pictures')
+                for file in pictures:
+                    result = upload_image_to_s3(file)
+                    if result:
+                        image_uuid, url = result
+                        SemlaImage.objects.create(
+                            id=image_uuid,
+                            semla=semla,
+                            image_url=url
+                        )
+                    else:
+                        logger.warning(f"Failed to upload image {file.name} for Semla {semla.id}")
+                
                 # Increment the creation count
                 SemlaCreationTracker.increment_count(ip_address, user_agent)
             return Response(
