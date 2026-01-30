@@ -29,6 +29,14 @@ DEBUG = False
 ALLOWED_HOSTS = ["192.168.86.30", "semlor.mardo.dev", "localhost", "127.0.0.1"]
 
 
+# IP Address Security Configuration
+# django-ipware is used to securely extract client IP addresses for rate limiting.
+# It automatically handles X-Forwarded-For headers from trusted proxies (nginx proxy manager)
+# and prevents IP spoofing attacks. The library validates proxy chains and uses the 
+# rightmost trusted IP, protecting against malicious header injection.
+# See: https://github.com/un33k/django-ipware
+
+
 # Application definition
 
 INSTALLED_APPS = [
