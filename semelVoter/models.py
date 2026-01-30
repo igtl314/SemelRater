@@ -1,12 +1,11 @@
 import django
 from django.db import models
-from datetime import date
+from django.utils.timezone import localdate
 # Create your models here.
-from django.db import models
 class Semla(models.Model):
     bakery = models.CharField(max_length=255)
     city = models.CharField(max_length=255)
-    picture = models.CharField(max_length=255)  # Will store as /images/user-input
+    picture = models.CharField(max_length=255, blank=True, default='')  # Will store as /images/user-input
     vegan = models.BooleanField(default=False)
     price = models.DecimalField(max_digits=5, decimal_places=2)
     kind = models.CharField(max_length=255)
@@ -50,7 +49,7 @@ class RatingTracker(models.Model):
         """
         Get the count of ratings for today for a specific IP address and user agent.
         """
-        today = date.today()
+        today = localdate()
         try:
             tracker = cls.objects.get(
                 ip_address=ip_address,
@@ -66,7 +65,51 @@ class RatingTracker(models.Model):
         """
         Increment the count for today's date for a specific IP address and user agent.
         """
-        today = date.today()
+        today = localdate()
+        tracker, created = cls.objects.get_or_create(
+            ip_address=ip_address,
+            user_agent=user_agent,
+            date=today,
+            defaults={'count': 1}
+        )
+        if not created:
+            tracker.count += 1
+            tracker.save()
+        return tracker.count
+
+
+class SemlaCreationTracker(models.Model):
+    """Tracks semla creation attempts per IP/user-agent to enforce rate limiting"""
+    ip_address = models.CharField(max_length=45)  # IPv6 can be long
+    user_agent = models.TextField()
+    date = models.DateField(default=django.utils.timezone.now)
+    count = models.PositiveIntegerField(default=1)
+    
+    class Meta:
+        unique_together = ('ip_address', 'user_agent', 'date')
+        
+    @classmethod
+    def get_today_count(cls, ip_address, user_agent):
+        """
+        Get the count of semla creations for today for a specific IP address and user agent.
+        """
+        today = localdate()
+        try:
+            tracker = cls.objects.get(
+                ip_address=ip_address,
+                user_agent=user_agent,
+                date=today
+            )
+            return tracker.count
+        except cls.DoesNotExist:
+            return 0
+            
+    @classmethod
+    def increment_count(cls, ip_address, user_agent):
+        """
+        Increment the creation count for today's date for a specific IP address and user agent.
+        """
+        today = localdate()
         tracker, created = cls.objects.get_or_create(
             ip_address=ip_address,
             user_agent=user_agent,

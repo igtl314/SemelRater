@@ -1,7 +1,9 @@
 from django.shortcuts import render
-from .models import Semla, Ratings, RatingTracker
+from django.db import transaction
+from .models import Semla, Ratings, RatingTracker, SemlaCreationTracker
 from rest_framework.response import Response
-from .serializers import SemlaSerializer, CommentSerializer
+from .serializers import SemlaSerializer, CommentSerializer, CreateSemlaSerializer
+from ipware import get_client_ip
 
 
 # Create your views here.
@@ -27,8 +29,15 @@ class RateSemlaView(APIView):
         """
         Rate a specific Semla.
         """
-        # Get IP address and user agent
-        ip_address = self.get_client_ip(request)
+        # Get IP address and user agent - ipware validates X-Forwarded-For against trusted proxies
+        client_ip, is_routable = get_client_ip(request)
+        if not client_ip:
+            # Reject requests where IP cannot be determined to prevent rate limit sharing
+            return Response(
+                {"error": "Unable to determine client IP address"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        ip_address = client_ip
         user_agent = request.META.get('HTTP_USER_AGENT', '')
         # Check if this sender has exceeded the daily limit
         daily_count = RatingTracker.get_today_count(ip_address, user_agent)
@@ -58,14 +67,6 @@ class RateSemlaView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
     
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
-    
 class SemlaCommentView(APIView):
     def get(self, request, pk):
         """
@@ -80,3 +81,45 @@ class SemlaCommentView(APIView):
                 {"error": f"No comments for Semla {pk} where found"}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class CreateSemlaView(APIView):
+    def post(self, request):
+        """
+        Create a new Semla entry.
+        """
+        # Get IP address and user agent for rate limiting - ipware validates X-Forwarded-For against trusted proxies
+        client_ip, is_routable = get_client_ip(request)
+        if not client_ip:
+            # Reject requests where IP cannot be determined to prevent rate limit sharing
+            return Response(
+                {"error": "Unable to determine client IP address"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        ip_address = client_ip
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        # Check if this sender has exceeded the daily limit
+        daily_count = SemlaCreationTracker.get_today_count(ip_address, user_agent)
+        if daily_count >= 5:
+            return Response(
+                {"error": "Daily creation limit reached. Please try again tomorrow."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        
+        serializer = CreateSemlaSerializer(data=request.data)
+        if serializer.is_valid():
+            # Wrap creation and counter increment in a transaction
+            # to ensure atomicity and prevent inconsistent state
+            with transaction.atomic():
+                semla = serializer.save()
+                # Increment the creation count
+                SemlaCreationTracker.increment_count(ip_address, user_agent)
+            return Response(
+                SemlaSerializer(semla).data,
+                status=status.HTTP_201_CREATED
+            )
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
