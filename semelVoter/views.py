@@ -28,9 +28,15 @@ class RateSemlaView(APIView):
         """
         Rate a specific Semla.
         """
-        # Get IP address and user agent - ipware automatically handles trusted proxies
+        # Get IP address and user agent - ipware validates X-Forwarded-For against trusted proxies
         client_ip, is_routable = get_client_ip(request)
-        ip_address = client_ip if client_ip else '0.0.0.0'
+        if not client_ip:
+            # Reject requests where IP cannot be determined to prevent rate limit sharing
+            return Response(
+                {"error": "Unable to determine client IP address"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        ip_address = client_ip
         user_agent = request.META.get('HTTP_USER_AGENT', '')
         # Check if this sender has exceeded the daily limit
         daily_count = RatingTracker.get_today_count(ip_address, user_agent)
@@ -81,9 +87,15 @@ class CreateSemlaView(APIView):
         """
         Create a new Semla entry.
         """
-        # Get IP address and user agent for rate limiting - ipware automatically handles trusted proxies
+        # Get IP address and user agent for rate limiting - ipware validates X-Forwarded-For against trusted proxies
         client_ip, is_routable = get_client_ip(request)
-        ip_address = client_ip if client_ip else '0.0.0.0'
+        if not client_ip:
+            # Reject requests where IP cannot be determined to prevent rate limit sharing
+            return Response(
+                {"error": "Unable to determine client IP address"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        ip_address = client_ip
         user_agent = request.META.get('HTTP_USER_AGENT', '')
         
         # Check if this sender has exceeded the daily limit

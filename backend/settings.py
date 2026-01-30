@@ -31,10 +31,14 @@ ALLOWED_HOSTS = ["192.168.86.30", "semlor.mardo.dev", "localhost", "127.0.0.1"]
 
 # IP Address Security Configuration
 # django-ipware is used to securely extract client IP addresses for rate limiting.
-# It automatically handles X-Forwarded-For headers from trusted proxies (nginx proxy manager)
-# and prevents IP spoofing attacks. The library validates proxy chains and uses the 
-# rightmost trusted IP, protecting against malicious header injection.
-# See: https://github.com/un33k/django-ipware
+# Configure trusted proxies to properly handle X-Forwarded-For headers from nginx proxy manager.
+# Requests from Docker network (172.16.0.0/12) and localhost are considered trusted proxies.
+IPWARE_TRUSTED_PROXY_LIST = ['127.0.0.1', '::1', '172.16.0.0/12', '10.0.0.0/8']
+# Prefer X-Forwarded-For from trusted proxies, fall back to REMOTE_ADDR
+IPWARE_META_PRECEDENCE_ORDER = (
+    'HTTP_X_FORWARDED_FOR',
+    'REMOTE_ADDR',
+)
 
 
 # Application definition

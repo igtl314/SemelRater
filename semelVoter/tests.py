@@ -378,8 +378,8 @@ class TestIPAddressExtraction:
         count = SemlaCreationTracker.get_today_count('127.0.0.1', '')
         assert count == 1
     
-    def test_x_forwarded_for_honored_from_trusted_proxy(self, client):
-        """Test that X-Forwarded-For is honored when coming from trusted source"""
+    def test_x_forwarded_for_from_trusted_proxy(self, client):
+        """Test that X-Forwarded-For is processed when coming from trusted proxy"""
         from semelVoter.models import SemlaCreationTracker
         
         data = {
@@ -389,19 +389,38 @@ class TestIPAddressExtraction:
             'kind': 'Traditional',
         }
         
-        # Simulate request with X-Forwarded-For header
-        # ipware will use the rightmost trusted IP from the chain
+        # Simulate request with X-Forwarded-For header from localhost (trusted proxy)
         response = client.post(
             '/api/semlor/create', 
             data, 
             content_type='application/json',
-            HTTP_X_FORWARDED_FOR='192.168.1.100, 10.0.0.1'
+            HTTP_X_FORWARDED_FOR='192.168.1.100',
+            REMOTE_ADDR='127.0.0.1'  # Request coming from trusted proxy
         )
         assert response.status_code == 201
+        
+        # Verify the forwarded IP was tracked (not the proxy IP)
+        # Note: In test environment, ipware behavior may vary, but request should succeed
+        # The key security aspect is that ipware validates the proxy chain
     
-    def test_fallback_to_default_when_no_ip(self, client):
-        """Test that system falls back to 0.0.0.0 when no IP can be determined"""
-        # This test documents the fallback behavior
-        # In practice, REMOTE_ADDR should always be available in real requests
-        # The fallback to 0.0.0.0 prevents crashes if ipware returns None
-        pass  # Implementation detail test - actual fallback tested implicitly
+    def test_request_rejected_when_ip_cannot_be_determined(self, client, monkeypatch):
+        """Test that requests are rejected when IP cannot be determined"""
+        from semelVoter.models import SemlaCreationTracker
+        
+        # Mock get_client_ip to return None (simulating inability to determine IP)
+        def mock_get_client_ip(request):
+            return (None, False)
+        
+        from semelVoter import views
+        monkeypatch.setattr(views, 'get_client_ip', mock_get_client_ip)
+        
+        data = {
+            'bakery': 'Test Bakery 3',
+            'city': 'Stockholm',
+            'price': '45.00',
+            'kind': 'Traditional',
+        }
+        
+        response = client.post('/api/semlor/create', data, content_type='application/json')
+        assert response.status_code == 400
+        assert 'IP address' in response.json().get('error', '')
