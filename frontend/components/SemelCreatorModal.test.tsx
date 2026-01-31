@@ -52,6 +52,7 @@ describe('SemelCreatorModal', () => {
       vegan: false,
       picture: '',
       rating: 0,
+      images: [],
     };
 
     vi.mocked(createSemel).mockResolvedValue({
