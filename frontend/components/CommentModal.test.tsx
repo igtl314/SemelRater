@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { CommentModal } from './CommentModal';
+import userEvent from '@testing-library/user-event';
 import { SemelContext } from '@/app/SemelProvider';
 
 // Mock the rateSemel action
 vi.mock('@/app/actions/semel', () => ({
   rateSemel: vi.fn().mockResolvedValue({ httpStatus: 200, message: 'Success' }),
 }));
+
+import { rateSemel } from '@/app/actions/semel';
+import { CommentModal } from './CommentModal';
 
 const mockSemel = {
   id: 1,
@@ -100,8 +103,6 @@ describe('CommentModal', () => {
   });
 
   it('should include image in form submission', async () => {
-    const { rateSemel } = await import('@/app/actions/semel');
-    
     render(
       <SemelContext.Provider value={mockContext}>
         <CommentModal 
@@ -130,7 +131,79 @@ describe('CommentModal', () => {
 
     // Wait for the async operation to complete
     await waitFor(() => {
-      expect(rateSemel).toHaveBeenCalledWith(1, 5, '', expect.any(File));
+      expect(rateSemel).toHaveBeenCalledWith(1, 5, '', expect.any(File), '');
+    });
+  });
+
+  it('renders name input field', () => {
+    render(
+      <SemelContext.Provider value={mockContext}>
+        <CommentModal
+          isOpen={true}
+          semel={mockSemel}
+          onOpenChange={() => {}}
+        />
+      </SemelContext.Provider>
+    );
+
+    expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
+  });
+
+  it('includes name in form submission', async () => {
+    const user = userEvent.setup();
+    
+    vi.mocked(rateSemel).mockResolvedValue({
+      httpStatus: 200,
+      message: 'Rating saved successfully!',
+    });
+
+    render(
+      <SemelContext.Provider value={mockContext}>
+        <CommentModal
+          isOpen={true}
+          semel={mockSemel}
+          onOpenChange={() => {}}
+        />
+      </SemelContext.Provider>
+    );
+
+    await user.type(screen.getByLabelText(/rating/i), '5');
+    await user.type(screen.getByLabelText(/comment/i), 'Great semla!');
+    await user.type(screen.getByLabelText(/name/i), 'Erik Svensson');
+    
+    await user.click(screen.getByRole('button', { name: /add review/i }));
+
+    await waitFor(() => {
+      expect(rateSemel).toHaveBeenCalledWith(1, 5, 'Great semla!', undefined, 'Erik Svensson');
+    });
+  });
+
+  it('submits with empty name when not provided', async () => {
+    const user = userEvent.setup();
+    
+    vi.mocked(rateSemel).mockResolvedValue({
+      httpStatus: 200,
+      message: 'Rating saved successfully!',
+    });
+
+    render(
+      <SemelContext.Provider value={mockContext}>
+        <CommentModal
+          isOpen={true}
+          semel={mockSemel}
+          onOpenChange={() => {}}
+        />
+      </SemelContext.Provider>
+    );
+
+    await user.type(screen.getByLabelText(/rating/i), '4');
+    await user.type(screen.getByLabelText(/comment/i), 'Nice!');
+    
+    await user.click(screen.getByRole('button', { name: /add review/i }));
+
+    await waitFor(() => {
+      expect(rateSemel).toHaveBeenCalledWith(1, 4, 'Nice!', undefined, '');
     });
   });
 });
+

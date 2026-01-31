@@ -1,10 +1,9 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useContext ,useRef} from "react";
 import { Modal, ModalBody, ModalFooter, ModalContent } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { Input, Textarea } from "@heroui/input";
 import { Spinner } from "@heroui/spinner";
-import { useContext } from "react";
 
 import { Semel } from "@/types";
 import { SemelContext } from "@/app/SemelProvider";
@@ -13,6 +12,15 @@ import { validateImageFile } from "@/utils/imageValidation";
 
 /** HTTP status code threshold for error responses */
 const HTTP_ERROR_THRESHOLD = 400;
+
+const INITIAL_FORM_STATE = {
+  rating: "",
+  comment: "",
+  name: "",
+};
+
+const INPUT_CLASS =
+  "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500";
 
 export function CommentModal({
   semel,
@@ -25,10 +33,7 @@ export function CommentModal({
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
-  const [formData, setFormData] = useState({
-    rating: "",
-    comment: "",
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,11 +69,16 @@ export function CommentModal({
     setSelectedImage(file);
   };
 
-  const handleModalClose = () => {
-    setFormData({ rating: "", comment: "" });
+
+  const resetForm = () => {
+    setFormData(INITIAL_FORM_STATE);
     setSelectedImage(null);
     setImageError(null);
     setMessage("");
+  };
+
+  const handleModalClose = () => {
+    resetForm();
     onOpenChange();
   };
 
@@ -83,15 +93,14 @@ export function CommentModal({
         parseInt(formData.rating),
         formData.comment,
         selectedImage || undefined,
+        formData.name,
       );
 
-      setMessage(
-        response.httpStatus >= HTTP_ERROR_THRESHOLD
-          ? response.message
-          : "Rating submitted successfully!",
-      );
-      if (response.httpStatus < HTTP_ERROR_THRESHOLD) {
-        setFormData({ rating: "", comment: "" });
+      const isSuccess = response.httpStatus < HTTP_ERROR_THRESHOLD;
+
+      setMessage(isSuccess ? "Rating submitted successfully!" : response.message);
+      if (isSuccess) {
+        setFormData(INITIAL_FORM_STATE);
         setSelectedImage(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
@@ -119,7 +128,7 @@ export function CommentModal({
               <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
                 <Input
                   isRequired
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className={INPUT_CLASS}
                   label="Rating"
                   max={5}
                   min={1}
@@ -130,12 +139,20 @@ export function CommentModal({
                   onChange={handleChange}
                 />
                 <Textarea
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className={INPUT_CLASS}
                   label="Comment"
                   name="comment"
                   placeholder="Write your comment here..."
                   rows={2}
                   value={formData.comment}
+                  onChange={handleChange}
+                />
+                <Input
+                  className={INPUT_CLASS}
+                  label="Name"
+                  name="name"
+                  placeholder="Your name (optional)"
+                  value={formData.name}
                   onChange={handleChange}
                 />
 

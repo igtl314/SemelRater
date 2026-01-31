@@ -123,7 +123,37 @@ describe('rateSemel', () => {
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comment: 'Great semla!', rating: 4 }),
+        body: JSON.stringify({
+          comment: 'Great semla!',
+          rating: 4,
+          name: '',
+        }),
+      })
+    );
+  });
+
+  it('should send name field in request body', async () => {
+    // Arrange
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ message: 'Rating saved successfully!' }),
+    });
+
+    // Act
+    await rateSemel(1, 5, 'Great semla!', undefined, 'Erik Svensson');
+
+    // Assert
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/rate/1'),
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          comment: 'Great semla!',
+          rating: 5,
+          name: 'Erik Svensson',
+        }),
       })
     );
   });
@@ -139,7 +169,7 @@ describe('rateSemel', () => {
     const mockFile = new File(['image-bytes'], 'review.jpg', { type: 'image/jpeg' });
 
     // Act
-    const result = await rateSemel(1, 5, 'Amazing!', mockFile);
+    const result = await rateSemel(1, 5, 'Amazing!', mockFile, 'Erik');
 
     // Assert
     expect(result).toEqual({
@@ -155,6 +185,7 @@ describe('rateSemel', () => {
     const sentFormData = fetchCall[1]?.body as FormData;
     expect(sentFormData.get('rating')).toBe('5');
     expect(sentFormData.get('comment')).toBe('Amazing!');
+    expect(sentFormData.get('name')).toBe('Erik');
     expect(sentFormData.get('image')).toBeInstanceOf(File);
   });
 

@@ -14,7 +14,7 @@ export type Semel = {
   bakery: string;
   city: string;
   picture: string;
-  images: imageType[];
+  images: ImageType[];
   vegan: boolean;
   price: string;
   kind: string;

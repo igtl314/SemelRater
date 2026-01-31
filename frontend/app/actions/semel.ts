@@ -56,6 +56,7 @@ export async function getSemelRatings(id: number): Promise<Rating[]> {
  * @param rating The rating value (1-5)
  * @param comment Optional comment with the rating
  * @param image Optional image file to attach to the rating
+ * @param name Optional name of the reviewer
  * @returns Promise<CommentResponse> Response with status and message
  */
 export async function rateSemel(
@@ -63,6 +64,7 @@ export async function rateSemel(
   rating: number,
   comment: string = "",
   image?: File,
+  name: string = "",
 ): Promise<CommentResponse> {
   try {
     let requestBody: FormData | string;
@@ -73,13 +75,14 @@ export async function rateSemel(
       const formData = new FormData();
       formData.append("rating", rating.toString());
       formData.append("comment", comment);
+      formData.append("name", name);
       formData.append("image", image);
       requestBody = formData;
       // Don't set Content-Type - browser will set it with boundary for multipart
     } else {
       // Use JSON for simple rating without image
       headers["Content-Type"] = "application/json";
-      requestBody = JSON.stringify({ comment, rating });
+      requestBody = JSON.stringify({ comment, rating, name });
     }
 
     const response = await fetch(`${BACKEND_URL}/api/rate/${semelId}`, {
