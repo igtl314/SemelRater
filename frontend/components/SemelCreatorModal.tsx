@@ -47,15 +47,21 @@ function SemelCreatorForm({ onSuccess, message, setMessage }: SemelCreatorFormPr
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
 
-    if (file) {
-      const validationResult = validateImageFile(file);
-      if (!validationResult.valid) {
-        setImageError(validationResult.message);
-        setSelectedFile(null);
-        return;
+    // If the file input was cleared (e.g., user canceled selection), clear any existing image error
+    if (!file) {
+      if (imageError) {
+        setImageError(null);
       }
+      setSelectedFile(null);
+      return;
     }
 
+    const validationResult = validateImageFile(file);
+    if (!validationResult.valid) {
+      setImageError(validationResult.message);
+      setSelectedFile(null);
+      return;
+    }
     setImageError(null);
     setSelectedFile(file);
   };
