@@ -2,6 +2,7 @@ import { Modal, ModalBody, ModalFooter, ModalContent } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { Spinner } from "@heroui/spinner";
 import { Carousel } from "react-responsive-carousel";
+import "react-responsive-carousel/lib/styles/carousel.min.css";
 
 import { SemelImage } from "./SemelImage";
 import { Comment } from "./Comment";
