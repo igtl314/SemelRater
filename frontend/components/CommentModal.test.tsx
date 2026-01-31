@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CommentModal } from './CommentModal';
 import { SemelContext } from '@/app/SemelProvider';
 
@@ -128,7 +128,9 @@ describe('CommentModal', () => {
     const submitButton = screen.getByRole('button', { name: /add review/i });
     fireEvent.click(submitButton);
 
-    // Verify rateSemel was called with the image
-    expect(rateSemel).toHaveBeenCalledWith(1, 5, '', expect.any(File));
+    // Wait for the async operation to complete
+    await waitFor(() => {
+      expect(rateSemel).toHaveBeenCalledWith(1, 5, '', expect.any(File));
+    });
   });
 });
