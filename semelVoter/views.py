@@ -58,11 +58,13 @@ class RateSemlaView(APIView):
             semla = Semla.objects.get(pk=pk)
             rating = request.data.get('rating')
             comment = request.data.get('comment')
+            name = request.data.get('name')
             semla.update_rating(rating)
             rating = Ratings(
                 semla=semla,
                 rating=rating,
                 comment=comment if comment and comment != '' else None,
+                name=name if name and name != '' else None
                 )
             rating.save()
             

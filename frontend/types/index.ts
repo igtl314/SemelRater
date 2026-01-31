@@ -34,6 +34,7 @@ export type Comment = {
   comment: string;
   rating: number;
   semelId: number;
+  name?: string;
 };
 
 export type SemelRatingsFetch = {
