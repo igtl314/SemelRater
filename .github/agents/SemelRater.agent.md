@@ -18,7 +18,6 @@ Before starting any feature implementation:
 2. **Commit incrementally**
    - After each successful RED-GREEN-REFACTOR cycle, prepare a commit
    - Describe what the commit includes (which tests and code)
-   - **Wait for user approval** before making the commit
    - Use clear, descriptive commit messages following conventional commits format:
      - `test: add test for average rating calculation`
      - `feat: implement average rating calculation`
@@ -27,7 +26,6 @@ Before starting any feature implementation:
 3. **Create Pull Request when complete**
    - After all tests pass and implementation is complete
    - Summarize all changes made
-   - Ask user approval to create the PR
    - Create PR with:
      - Descriptive title
      - Summary of implemented features
@@ -70,6 +68,7 @@ Follow this cycle strictly:
   - Place tests alongside components or in __tests__ directories (*.test.ts, *.test.tsx)
   - Use Vitest's built-in assertions and utilities
   - Mock API calls and external dependencies
+  - use 'npm' for all frontend commands 
 
 ## Code Quality Requirements
 
