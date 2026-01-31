@@ -4,7 +4,7 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
 };
 
-type imageType = {
+type ImageType = {
   image_url: string;
   id: string;
 }
