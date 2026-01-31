@@ -18,8 +18,7 @@ Before starting any feature implementation:
 2. **Commit incrementally**
    - After each successful RED-GREEN-REFACTOR cycle, prepare a commit
    - Describe what the commit includes (which tests and code)
-   - **Suggest the git commit command** directly for the user to run
-   - **If user asks questions instead of running the command**: Answer their questions fully, then re-suggest the exact same command again
+   - **Wait for user approval** before making the commit
    - Use clear, descriptive commit messages following conventional commits format:
      - `test: add test for average rating calculation`
      - `feat: implement average rating calculation`
@@ -64,7 +63,7 @@ Follow this cycle strictly:
   - Place tests in appropriate test files (test_*.py)
   - Use pytest fixtures for setup/teardown
   - Use pytest markers for categorization
-  - **Always use the virtual environment**: Run commands using `source venv/bin/activate && <command>` or use venv's executables directly (`venv/bin/python`, `venv/bin/pytest`)
+   - **Always use the virtual environment**: Run commands using `source venv/bin/activate && <command>` or use venv's executables directly (`venv/bin/python`, `venv/bin/pytest`)
   - Ensure all Python/Django commands run within the venv context
   
 - **Frontend (TypeScript/Next.js)**: Use Vitest exclusively
@@ -103,7 +102,6 @@ Follow this cycle strictly:
 - Ask clear yes/no questions when approval is needed
 - Highlight what changed and why
 - Use the manage_todo_list tool to track TDD progress through multiple tests
-- **When you suggest a git command and user asks a question**: Always finish your answer by re-suggesting the command
 
 ## Example Workflow
 
@@ -123,42 +121,39 @@ Follow this cycle strictly:
    
 4. [Write test, run it, show failure]
 
-5. You: "Test fails as expected. Commit this test:
-   ```bash
-   git add .
-   git commit -m 'test: add test for average rating calculation'
-   ```"
+5. You: "Test fails as expected. Ready to commit this failing test?
+   Commit message: 'test: add test for average rating calculation'"
+   
+6. [Wait for user approval, make commit]
 
-6. You: "Ready to implement the function that:
+7. You: "Ready to implement the function that:
    - Takes a list of ratings
    - Returns the mean value
    - Handles empty lists
    
    Proceed with implementation?"
 
-7. [Wait for approval, implement, run test, show success]
+8. [Wait for approval, implement, run test, show success]
 
-8. You: "Tests pass! Commit this implementation:
-   ```bash
-   git add .
-   git commit -m 'feat: implement average rating calculation'
-   ```"
+9. You: "Tests pass! Ready to commit?
+   Commit message: 'feat: implement average rating calculation'"
+   
+10. [Wait for user approval, make commit]
 
-9. You: "Minor refactor - extracting validation logic into separate function for reusability."
-   [Refactor, run tests, show all pass]
-   "Commit refactoring:
-   ```bash
-   git add .
-   git commit -m 'refactor: extract validation logic'
-   ```"
+11. You: "Minor refactor - extracting validation logic into separate function for reusability."
+    [Refactor, run tests, show all pass]
+    "Ready to commit refactoring?
+    Commit message: 'refactor: extract validation logic'"
+    
+12. [Wait for user approval, make commit]
 
-10. You: "Feature complete! All tests passing. Ready to create PR with summary:
+13. You: "Feature complete! All tests passing. Ready to create PR with summary:
     - Added average rating calculation
     - 3 tests covering happy path, edge cases, error handling
     
     Create pull request?"
     
-11. [Wait for user approval, create PR]
+14. [Wait for user approval, create PR]
 ```
 
 ## Important Reminders
@@ -170,7 +165,6 @@ Follow this cycle strictly:
 - Tests should be readable and serve as documentation
 - One assertion concept per test when possible
 - **Always create a feature branch before starting work**
-- **Suggest git commit commands directly (don't ask for approval first)**
-- **If user asks questions after you suggest a command: Answer the questions, then re-suggest the command**
+- **Request approval before making each commit**
 - **Use conventional commit message format**
 - **Create a PR only after all tests pass and user approves**
