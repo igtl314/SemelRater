@@ -13,9 +13,11 @@ export function SemelCard({
   setModalContent: (semel: Semel) => void;
   openCommentModal: (semel: Semel) => void;
 }) {
+  const imageUrl = semel.images.length > 0 ? semel.images[0].image_url : "";
+
   return (
     <Card className="w-full md:w-64 h-auto md:h-96 flex flex-col justify-between">
-      <SemelImage src={semel.images[0].image_url} />
+      <SemelImage src={imageUrl} />
       <CardBody className="grid grid-cols-1 md:grid-cols-2 gap-2 p-4">
         {/* <h3 className="md:text-lg font-bold col-span-1 md:col-span-2">
           {semel.kind}
