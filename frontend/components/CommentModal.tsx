@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Modal, ModalBody, ModalFooter, ModalContent } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { Input, Textarea } from "@heroui/input";
@@ -9,6 +9,7 @@ import { useContext } from "react";
 import { Semel } from "@/types";
 import { SemelContext } from "@/app/SemelProvider";
 import { rateSemel } from "@/app/actions/semel";
+import { validateImageFile } from "@/utils/imageValidation";
 
 /** HTTP status code threshold for error responses */
 const HTTP_ERROR_THRESHOLD = 400;
@@ -28,6 +29,9 @@ export function CommentModal({
     rating: "",
     comment: "",
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const ctx = useContext(SemelContext);
 
   const handleChange = (
@@ -38,8 +42,32 @@ export function CommentModal({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setImageError(null);
+    
+    if (!file) {
+      setSelectedImage(null);
+      return;
+    }
+
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setImageError(validation.message);
+      setSelectedImage(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setSelectedImage(file);
+  };
+
   const handleModalClose = () => {
     setFormData({ rating: "", comment: "" });
+    setSelectedImage(null);
+    setImageError(null);
     setMessage("");
     onOpenChange();
   };
@@ -54,6 +82,7 @@ export function CommentModal({
         semel.id,
         parseInt(formData.rating),
         formData.comment,
+        selectedImage || undefined,
       );
 
       setMessage(
@@ -63,6 +92,10 @@ export function CommentModal({
       );
       if (response.httpStatus < HTTP_ERROR_THRESHOLD) {
         setFormData({ rating: "", comment: "" });
+        setSelectedImage(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
         ctx.refreshSemels();
       }
     } catch {
@@ -105,6 +138,26 @@ export function CommentModal({
                   value={formData.comment}
                   onChange={handleChange}
                 />
+
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="image-upload" className="text-sm font-medium text-foreground-600">
+                    Image (optional)
+                  </label>
+                  <input
+                    ref={fileInputRef}
+                    id="image-upload"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleImageChange}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-600"
+                  />
+                  {selectedImage && (
+                    <p className="text-sm text-success">{selectedImage.name}</p>
+                  )}
+                  {imageError && (
+                    <p className="text-sm text-danger">{imageError}</p>
+                  )}
+                </div>
 
                 <Button color="primary" disabled={isSubmitting} type="submit">
                   {isSubmitting ? <Spinner className="mr-2" size="sm" /> : null}
