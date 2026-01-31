@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createSemel } from './semel';
+import { createSemel, rateSemel } from './semel';
 
 describe('createSemel', () => {
   beforeEach(() => {
@@ -93,6 +93,86 @@ describe('createSemel', () => {
     expect(result).toEqual({
       success: false,
       error: 'Failed to create semel. Please try again.',
+    });
+  });
+});
+
+describe('rateSemel', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('should submit rating without image using JSON', async () => {
+    // Arrange
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ message: 'Rating saved successfully!' }),
+    });
+
+    // Act
+    const result = await rateSemel(1, 4, 'Great semla!');
+
+    // Assert
+    expect(result).toEqual({
+      httpStatus: 200,
+      message: 'Rating saved successfully!',
+    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/rate/1'),
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: 'Great semla!', rating: 4 }),
+      })
+    );
+  });
+
+  it('should submit rating with image using FormData', async () => {
+    // Arrange
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ message: 'Rating saved successfully!' }),
+    });
+
+    const mockFile = new File(['image-bytes'], 'review.jpg', { type: 'image/jpeg' });
+
+    // Act
+    const result = await rateSemel(1, 5, 'Amazing!', mockFile);
+
+    // Assert
+    expect(result).toEqual({
+      httpStatus: 200,
+      message: 'Rating saved successfully!',
+    });
+    
+    // Verify FormData was used (no Content-Type header - browser sets it with boundary)
+    const fetchCall = vi.mocked(global.fetch).mock.calls[0];
+    expect(fetchCall[1]?.body).toBeInstanceOf(FormData);
+    
+    // Verify FormData contents
+    const sentFormData = fetchCall[1]?.body as FormData;
+    expect(sentFormData.get('rating')).toBe('5');
+    expect(sentFormData.get('comment')).toBe('Amazing!');
+    expect(sentFormData.get('image')).toBeInstanceOf(File);
+  });
+
+  it('should handle rate limit error', async () => {
+    // Arrange
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({ error: 'Daily rating limit reached. Please try again tomorrow.' }),
+    });
+
+    // Act
+    const result = await rateSemel(1, 3, 'Test');
+
+    // Assert
+    expect(result).toEqual({
+      httpStatus: 429,
+      message: 'Daily rating limit reached. Please try again tomorrow.',
     });
   });
 });
