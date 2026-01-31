@@ -72,11 +72,14 @@ class RateSemlaView(APIView):
                 result = upload_image_to_s3(image_file)
                 if result:
                     image_uuid, url = result
-                    SemlaImage.objects.create(
-                        id=image_uuid,
-                        semla=semla,
-                        image_url=url
-                    )
+                    try:
+                        SemlaImage.objects.create(
+                            id=image_uuid,
+                            semla=semla,
+                            image_url=url
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to create SemlaImage record for Semla {semla.id}: {e}")
                 else:
                     logger.warning(f"Failed to upload review image for Semla {semla.id}")
             
