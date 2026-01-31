@@ -3,7 +3,7 @@ import uuid
 from django.core.files.uploadedfile import SimpleUploadedFile
 from decimal import Decimal
 from semelVoter.serializers import CreateSemlaSerializer
-from semelVoter.models import Semla, SemlaImage
+from semelVoter.models import Semla, SemlaImage, Ratings
 
 
 @pytest.mark.django_db
@@ -846,6 +846,96 @@ class TestCreateSemlaWithMultipleImages:
         # The UUID in response should match what was returned by upload function
         assert image_data['id'] == str(captured_uuid[0])
         assert str(captured_uuid[0]) in image_data['image_url']
+
+
+@pytest.mark.django_db
+class TestRateSemlaWithImage:
+    """Test suite for rating a Semla with an optional image upload"""
+    
+    def test_rate_semla_with_image_creates_semla_image(self, client, monkeypatch):
+        """Test that rating with an image creates a SemlaImage record"""
+        # Create a semla to rate
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        
+        # Mock S3 upload
+        def mock_upload(file):
+            image_uuid = uuid.uuid4()
+            return (image_uuid, f"https://bucket.s3.amazonaws.com/semlor/{image_uuid}.jpg")
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload)
+        
+        # Submit rating with image
+        image_file = SimpleUploadedFile('review.jpg', b'image-bytes', content_type='image/jpeg')
+        response = client.post(
+            f'/api/rate/{semla.id}',
+            {
+                'rating': 4,
+                'comment': 'Great semla!',
+                'image': image_file,
+            }
+        )
+        
+        assert response.status_code == 200
+        
+        # Verify SemlaImage was created
+        assert semla.images.count() == 1
+        assert 'bucket.s3.amazonaws.com' in semla.images.first().image_url
+    
+    def test_rate_semla_without_image_still_works(self, client):
+        """Test that rating without an image still works as before"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        
+        response = client.post(
+            f'/api/rate/{semla.id}',
+            {'rating': 5, 'comment': 'Excellent!'},
+            content_type='application/json'
+        )
+        
+        assert response.status_code == 200
+        assert semla.images.count() == 0
+    
+    def test_rate_semla_image_upload_failure_still_saves_rating(self, client, monkeypatch):
+        """Test that rating is saved even if image upload fails"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        
+        # Mock S3 upload failure
+        def mock_upload_fail(file):
+            return None
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload_fail)
+        
+        image_file = SimpleUploadedFile('review.jpg', b'image-bytes', content_type='image/jpeg')
+        response = client.post(
+            f'/api/rate/{semla.id}',
+            {
+                'rating': 3,
+                'comment': 'Okay semla',
+                'image': image_file,
+            }
+        )
+        
+        assert response.status_code == 200
+        # Rating should still be saved
+        assert Ratings.objects.filter(semla=semla).count() == 1
+        # But no image should be created
+        assert semla.images.count() == 0
 
 
 @pytest.mark.django_db

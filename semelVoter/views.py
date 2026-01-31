@@ -30,9 +30,11 @@ class SelmaViewList(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 class RateSemlaView(APIView):
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
+    
     def post(self, request, pk):
         """
-        Rate a specific Semla.
+        Rate a specific Semla. Optionally include an image.
         """
         # Get IP address and user agent - ipware validates X-Forwarded-For against trusted proxies
         client_ip, is_routable = get_client_ip(request)
@@ -62,7 +64,22 @@ class RateSemlaView(APIView):
                 rating=rating,
                 comment=comment if comment and comment != '' else None,
                 )
-            rating.save() 
+            rating.save()
+            
+            # Handle optional image upload
+            image_file = request.FILES.get('image')
+            if image_file:
+                result = upload_image_to_s3(image_file)
+                if result:
+                    image_uuid, url = result
+                    SemlaImage.objects.create(
+                        id=image_uuid,
+                        semla=semla,
+                        image_url=url
+                    )
+                else:
+                    logger.warning(f"Failed to upload review image for Semla {semla.id}")
+            
             # Increment the count
             RatingTracker.increment_count(ip_address, user_agent)
             return Response({"message": "Rating saved successfully!"})
