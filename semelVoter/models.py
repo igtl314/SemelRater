@@ -42,30 +42,34 @@ class Ratings(models.Model):
     semla = models.ForeignKey(Semla, on_delete=models.CASCADE, related_name='ratings')
     rating = models.IntegerField()
     comment = models.TextField(null=True, blank=True)
+    name = models.CharField(max_length=100, null=True, blank=True)
     date = models.DateField(default=django.utils.timezone.now)
+
     def __str__(self):
         return f"{self.semla.bakery} - {self.rating}"
+
     @classmethod
     def get_semel_rating(cls, semla_id):
         """
         Get all ratings for a specific Semla.
         """
         return cls.objects.filter(semla_id=semla_id).order_by('-date').exclude(comment__isnull=True)
-    
-class RatingTracker(models.Model):
+
+
+class BaseTracker(models.Model):
+    """Abstract base class for IP/user-agent rate limiting trackers"""
     ip_address = models.CharField(max_length=45)  # IPv6 can be long
     user_agent = models.TextField()
     date = models.DateField(default=django.utils.timezone.now)
     count = models.PositiveIntegerField(default=1)
-    
+
     class Meta:
+        abstract = True
         unique_together = ('ip_address', 'user_agent', 'date')
-        
+
     @classmethod
     def get_today_count(cls, ip_address, user_agent):
-        """
-        Get the count of ratings for today for a specific IP address and user agent.
-        """
+        """Get the count for today for a specific IP address and user agent."""
         today = localdate()
         try:
             tracker = cls.objects.get(
@@ -76,12 +80,10 @@ class RatingTracker(models.Model):
             return tracker.count
         except cls.DoesNotExist:
             return 0
-            
+
     @classmethod
     def increment_count(cls, ip_address, user_agent):
-        """
-        Increment the count for today's date for a specific IP address and user agent.
-        """
+        """Increment the count for today's date for a specific IP address and user agent."""
         today = localdate()
         tracker, created = cls.objects.get_or_create(
             ip_address=ip_address,
@@ -95,45 +97,15 @@ class RatingTracker(models.Model):
         return tracker.count
 
 
-class SemlaCreationTracker(models.Model):
+class RatingTracker(BaseTracker):
+    """Tracks rating attempts per IP/user-agent to enforce rate limiting"""
+
+    class Meta(BaseTracker.Meta):
+        pass
+
+
+class SemlaCreationTracker(BaseTracker):
     """Tracks semla creation attempts per IP/user-agent to enforce rate limiting"""
-    ip_address = models.CharField(max_length=45)  # IPv6 can be long
-    user_agent = models.TextField()
-    date = models.DateField(default=django.utils.timezone.now)
-    count = models.PositiveIntegerField(default=1)
-    
-    class Meta:
-        unique_together = ('ip_address', 'user_agent', 'date')
-        
-    @classmethod
-    def get_today_count(cls, ip_address, user_agent):
-        """
-        Get the count of semla creations for today for a specific IP address and user agent.
-        """
-        today = localdate()
-        try:
-            tracker = cls.objects.get(
-                ip_address=ip_address,
-                user_agent=user_agent,
-                date=today
-            )
-            return tracker.count
-        except cls.DoesNotExist:
-            return 0
-            
-    @classmethod
-    def increment_count(cls, ip_address, user_agent):
-        """
-        Increment the creation count for today's date for a specific IP address and user agent.
-        """
-        today = localdate()
-        tracker, created = cls.objects.get_or_create(
-            ip_address=ip_address,
-            user_agent=user_agent,
-            date=today,
-            defaults={'count': 1}
-        )
-        if not created:
-            tracker.count += 1
-            tracker.save()
-        return tracker.count
+
+    class Meta(BaseTracker.Meta):
+        pass

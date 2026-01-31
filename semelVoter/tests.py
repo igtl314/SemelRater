@@ -1044,3 +1044,51 @@ class TestLegacyPictureFieldCleanup:
         assert response.json()['images'] == []
         # Legacy picture field should not be populated
         assert response.json()['picture'] == ''
+
+
+@pytest.mark.django_db
+class TestRatingsNameField:
+    """Test suite for Ratings model name field"""
+
+    def test_ratings_model_has_name_field(self):
+        """Test that Ratings model has a name field"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        rating = Ratings.objects.create(
+            semla=semla,
+            rating=4,
+            comment='Great semla!',
+            name='Erik Svensson'
+        )
+        assert rating.name == 'Erik Svensson'
+
+    def test_ratings_name_field_is_optional(self):
+        """Test that name field can be blank/null"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        # Create rating without name
+        rating = Ratings.objects.create(
+            semla=semla,
+            rating=5,
+            comment='Delicious!'
+        )
+        assert rating.name is None or rating.name == ''
+
+    def test_ratings_name_max_length(self):
+        """Test that name field has reasonable max length"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        name_field = Ratings._meta.get_field('name')
+        assert name_field.max_length >= 100
