@@ -6,7 +6,7 @@ export function SemelImage({ src }: { src: string }) {
       alt={src}
       className="w-full h-1/2 object-cover"
       height={500}
-      src={"/images/" + src}
+      src={src}
       width={500}
     />
   );

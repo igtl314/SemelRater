@@ -4,11 +4,17 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
 };
 
+type ImageType = {
+  image_url: string;
+  id: string;
+}
+
 export type Semel = {
   id: number;
   bakery: string;
   city: string;
   picture: string;
+  images: imageType[];
   vegan: boolean;
   price: string;
   kind: string;

@@ -91,3 +91,52 @@ export async function rateSemel(
     };
   }
 }
+
+/**
+ * Response type for create semel operation
+ */
+type CreateSemelResponse =
+  | { success: true; data: Semel }
+  | { success: false; error: string; errors?: Record<string, string[]> };
+
+/**
+ * Creates a new semel with optional image uploads.
+ * @param formData FormData containing bakery, city, price, kind, vegan, and pictures
+ * @returns Promise<CreateSemelResponse> Response with success status and data or errors
+ */
+export async function createSemel(
+  formData: FormData,
+): Promise<CreateSemelResponse> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/semlor/create`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 400) {
+        return {
+          success: false,
+          error: "Validation failed",
+          errors: data,
+        };
+      }
+      return {
+        success: false,
+        error: data.error || "Failed to create semel",
+      };
+    }
+
+    return {
+      success: true,
+      data,
+    };
+  } catch {
+    return {
+      success: false,
+      error: "Failed to create semel. Please try again.",
+    };
+  }
+}
