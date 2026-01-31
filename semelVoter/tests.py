@@ -936,6 +936,48 @@ class TestRateSemlaWithImage:
         assert Ratings.objects.filter(semla=semla).count() == 1
         # But no image should be created
         assert semla.images.count() == 0
+    
+    def test_rate_semla_db_error_on_image_creation_still_saves_rating(self, client, monkeypatch):
+        """Test that rating is saved even if SemlaImage.objects.create fails"""
+        semla = Semla.objects.create(
+            bakery='Test Bakery',
+            city='Stockholm',
+            price='45.00',
+            kind='Traditional'
+        )
+        
+        # Mock successful S3 upload
+        def mock_upload(file):
+            image_uuid = uuid.uuid4()
+            return (image_uuid, f"https://bucket.s3.amazonaws.com/semlor/{image_uuid}.jpg")
+        
+        # Mock SemlaImage.objects.create to raise an exception
+        def mock_create_fail(*args, **kwargs):
+            raise Exception("Database error during image creation")
+        
+        import semelVoter.views as views
+        monkeypatch.setattr(views, 'upload_image_to_s3', mock_upload)
+        monkeypatch.setattr(SemlaImage.objects, 'create', mock_create_fail)
+        
+        image_file = SimpleUploadedFile('review.jpg', b'image-bytes', content_type='image/jpeg')
+        response = client.post(
+            f'/api/rate/{semla.id}',
+            {
+                'rating': 4,
+                'comment': 'Nice semla',
+                'image': image_file,
+            }
+        )
+        
+        # Request should succeed despite image creation failure
+        assert response.status_code == 200
+        # Rating should be saved
+        assert Ratings.objects.filter(semla=semla).count() == 1
+        rating = Ratings.objects.get(semla=semla)
+        assert rating.rating == 4
+        assert rating.comment == 'Nice semla'
+        # No image should be created due to the error
+        assert semla.images.count() == 0
 
 
 @pytest.mark.django_db
