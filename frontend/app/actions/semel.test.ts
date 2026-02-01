@@ -102,7 +102,15 @@ describe('rateSemel', () => {
     vi.resetAllMocks();
   });
 
-  it('should submit rating without image using JSON', async () => {
+  const mockCategoryRatings = {
+    gradde: 5,
+    mandelmassa: 4,
+    lock: 3,
+    helhet: 5,
+    bulle: 4,
+  };
+
+  it('should submit rating without image using JSON with category ratings', async () => {
     // Arrange
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -111,7 +119,7 @@ describe('rateSemel', () => {
     });
 
     // Act
-    const result = await rateSemel(1, 4, 'Great semla!');
+    const result = await rateSemel(1, mockCategoryRatings, 'Great semla!');
 
     // Assert
     expect(result).toEqual({
@@ -125,14 +133,18 @@ describe('rateSemel', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           comment: 'Great semla!',
-          rating: 4,
           name: '',
+          gradde: 5,
+          mandelmassa: 4,
+          lock: 3,
+          helhet: 5,
+          bulle: 4,
         }),
       })
     );
   });
 
-  it('should send name field in request body', async () => {
+  it('should send name field in request body with category ratings', async () => {
     // Arrange
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -141,7 +153,7 @@ describe('rateSemel', () => {
     });
 
     // Act
-    await rateSemel(1, 5, 'Great semla!', undefined, 'Erik Svensson');
+    await rateSemel(1, mockCategoryRatings, 'Great semla!', undefined, 'Erik Svensson');
 
     // Assert
     expect(global.fetch).toHaveBeenCalledWith(
@@ -151,14 +163,18 @@ describe('rateSemel', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           comment: 'Great semla!',
-          rating: 5,
           name: 'Erik Svensson',
+          gradde: 5,
+          mandelmassa: 4,
+          lock: 3,
+          helhet: 5,
+          bulle: 4,
         }),
       })
     );
   });
 
-  it('should submit rating with image using FormData', async () => {
+  it('should submit rating with image using FormData with category ratings', async () => {
     // Arrange
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -169,7 +185,7 @@ describe('rateSemel', () => {
     const mockFile = new File(['image-bytes'], 'review.jpg', { type: 'image/jpeg' });
 
     // Act
-    const result = await rateSemel(1, 5, 'Amazing!', mockFile, 'Erik');
+    const result = await rateSemel(1, mockCategoryRatings, 'Amazing!', mockFile, 'Erik');
 
     // Assert
     expect(result).toEqual({
@@ -183,7 +199,11 @@ describe('rateSemel', () => {
     
     // Verify FormData contents
     const sentFormData = fetchCall[1]?.body as FormData;
-    expect(sentFormData.get('rating')).toBe('5');
+    expect(sentFormData.get('gradde')).toBe('5');
+    expect(sentFormData.get('mandelmassa')).toBe('4');
+    expect(sentFormData.get('lock')).toBe('3');
+    expect(sentFormData.get('helhet')).toBe('5');
+    expect(sentFormData.get('bulle')).toBe('4');
     expect(sentFormData.get('comment')).toBe('Amazing!');
     expect(sentFormData.get('name')).toBe('Erik');
     expect(sentFormData.get('image')).toBeInstanceOf(File);
@@ -198,7 +218,7 @@ describe('rateSemel', () => {
     });
 
     // Act
-    const result = await rateSemel(1, 3, 'Test');
+    const result = await rateSemel(1, mockCategoryRatings, 'Test');
 
     // Assert
     expect(result).toEqual({

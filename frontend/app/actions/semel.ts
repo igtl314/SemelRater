@@ -1,6 +1,6 @@
 "use server";
 
-import { Semel, Rating, CommentResponse } from "@/types";
+import { Semel, Rating, CommentResponse, CategoryRatings } from "@/types";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://backend:8000";
 
@@ -51,9 +51,9 @@ export async function getSemelRatings(id: number): Promise<Rating[]> {
 }
 
 /**
- * Submits a rating for a specific semel.
+ * Submits a rating for a specific semel with category ratings.
  * @param semelId The ID of the semel to rate
- * @param rating The rating value (1-5)
+ * @param categoryRatings The category ratings (gradde, mandelmassa, lock, helhet, bulle)
  * @param comment Optional comment with the rating
  * @param image Optional image file to attach to the rating
  * @param name Optional name of the reviewer
@@ -61,7 +61,7 @@ export async function getSemelRatings(id: number): Promise<Rating[]> {
  */
 export async function rateSemel(
   semelId: number,
-  rating: number,
+  categoryRatings: CategoryRatings,
   comment: string = "",
   image?: File,
   name: string = "",
@@ -73,7 +73,11 @@ export async function rateSemel(
     if (image) {
       // Use FormData when image is provided
       const formData = new FormData();
-      formData.append("rating", rating.toString());
+      formData.append("gradde", categoryRatings.gradde.toString());
+      formData.append("mandelmassa", categoryRatings.mandelmassa.toString());
+      formData.append("lock", categoryRatings.lock.toString());
+      formData.append("helhet", categoryRatings.helhet.toString());
+      formData.append("bulle", categoryRatings.bulle.toString());
       formData.append("comment", comment);
       formData.append("name", name);
       formData.append("image", image);
@@ -82,7 +86,15 @@ export async function rateSemel(
     } else {
       // Use JSON for simple rating without image
       headers["Content-Type"] = "application/json";
-      requestBody = JSON.stringify({ comment, rating, name });
+      requestBody = JSON.stringify({
+        comment,
+        name,
+        gradde: categoryRatings.gradde,
+        mandelmassa: categoryRatings.mandelmassa,
+        lock: categoryRatings.lock,
+        helhet: categoryRatings.helhet,
+        bulle: categoryRatings.bulle,
+      });
     }
 
     const response = await fetch(`${BACKEND_URL}/api/rate/${semelId}`, {

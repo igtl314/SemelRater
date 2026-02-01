@@ -2,19 +2,28 @@
 import { useState, useContext ,useRef} from "react";
 import { Modal, ModalBody, ModalFooter, ModalContent } from "@heroui/modal";
 import { Button } from "@heroui/button";
-import { Input, Textarea } from "@heroui/input";
+import { Textarea } from "@heroui/input";
+import { Input } from "@heroui/input";
 import { Spinner } from "@heroui/spinner";
 
-import { Semel } from "@/types";
+import { Semel, CategoryRatings } from "@/types";
 import { SemelContext } from "@/app/SemelProvider";
 import { rateSemel } from "@/app/actions/semel";
 import { validateImageFile } from "@/utils/imageValidation";
+import { CategoryRatingInput } from "./CategoryRatingInput";
 
 /** HTTP status code threshold for error responses */
 const HTTP_ERROR_THRESHOLD = 400;
 
+const INITIAL_CATEGORY_RATINGS = {
+  gradde: "",
+  mandelmassa: "",
+  lock: "",
+  helhet: "",
+  bulle: "",
+};
+
 const INITIAL_FORM_STATE = {
-  rating: "",
   comment: "",
   name: "",
 };
@@ -34,10 +43,15 @@ export function CommentModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const [categoryRatings, setCategoryRatings] = useState(INITIAL_CATEGORY_RATINGS);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ctx = useContext(SemelContext);
+
+  const handleCategoryChange = (category: keyof CategoryRatings, value: string) => {
+    setCategoryRatings((prev) => ({ ...prev, [category]: value }));
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -72,6 +86,7 @@ export function CommentModal({
 
   const resetForm = () => {
     setFormData(INITIAL_FORM_STATE);
+    setCategoryRatings(INITIAL_CATEGORY_RATINGS);
     setSelectedImage(null);
     setImageError(null);
     setMessage("");
@@ -87,10 +102,18 @@ export function CommentModal({
     setIsSubmitting(true);
     setMessage("");
 
+    const parsedCategoryRatings: CategoryRatings = {
+      gradde: parseInt(categoryRatings.gradde),
+      mandelmassa: parseInt(categoryRatings.mandelmassa),
+      lock: parseInt(categoryRatings.lock),
+      helhet: parseInt(categoryRatings.helhet),
+      bulle: parseInt(categoryRatings.bulle),
+    };
+
     try {
       const response = await rateSemel(
         semel.id,
-        parseInt(formData.rating),
+        parsedCategoryRatings,
         formData.comment,
         selectedImage || undefined,
         formData.name,
@@ -101,6 +124,7 @@ export function CommentModal({
       setMessage(isSuccess ? "Rating submitted successfully!" : response.message);
       if (isSuccess) {
         setFormData(INITIAL_FORM_STATE);
+        setCategoryRatings(INITIAL_CATEGORY_RATINGS);
         setSelectedImage(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
@@ -126,17 +150,9 @@ export function CommentModal({
           <>
             <ModalBody className="flex flex-col gap-4">
               <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-                <Input
-                  isRequired
-                  className={INPUT_CLASS}
-                  label="Rating"
-                  max={5}
-                  min={1}
-                  name="rating"
-                  placeholder="1-5"
-                  type="number"
-                  value={formData.rating}
-                  onChange={handleChange}
+                <CategoryRatingInput
+                  values={categoryRatings}
+                  onChange={handleCategoryChange}
                 />
                 <Textarea
                   className={INPUT_CLASS}

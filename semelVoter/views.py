@@ -32,9 +32,12 @@ class SelmaViewList(APIView):
 class RateSemlaView(APIView):
     parser_classes = [JSONParser, FormParser, MultiPartParser]
     
+    CATEGORY_FIELDS = ['gradde', 'mandelmassa', 'lock', 'helhet', 'bulle']
+    
     def post(self, request, pk):
         """
         Rate a specific Semla. Optionally include an image.
+        Requires 5 category ratings: gradde, mandelmassa, lock, helhet, bulle (all 1-5).
         """
         # Get IP address and user agent - ipware validates X-Forwarded-For against trusted proxies
         client_ip, is_routable = get_client_ip(request)
@@ -53,18 +56,49 @@ class RateSemlaView(APIView):
                 {"error": "Daily rating limit reached. Please try again tomorrow."},
                 status=status.HTTP_429_TOO_MANY_REQUESTS
             )
+        
+        # Validate and extract category ratings
+        category_ratings = {}
+        for field in self.CATEGORY_FIELDS:
+            value = request.data.get(field)
+            if value is None:
+                return Response(
+                    {"error": f"Missing required field: {field}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            try:
+                value = int(value)
+                if value < 1 or value > 5:
+                    return Response(
+                        {"error": f"Invalid value for {field}: must be between 1 and 5"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                category_ratings[field] = value
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": f"Invalid value for {field}: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Calculate average rating from all 5 categories
+        average_rating = sum(category_ratings.values()) / len(category_ratings)
+        
         # Process the rating
         try:
             semla = Semla.objects.get(pk=pk)
-            rating = request.data.get('rating')
             comment = request.data.get('comment')
             name = request.data.get('name')
-            semla.update_rating(rating)
+            semla.update_rating(average_rating)
             rating = Ratings(
                 semla=semla,
-                rating=rating,
+                rating=round(average_rating),
                 comment=comment if comment and comment != '' else None,
-                name=name if name and name != '' else None
+                name=name if name and name != '' else None,
+                gradde=category_ratings['gradde'],
+                mandelmassa=category_ratings['mandelmassa'],
+                lock=category_ratings['lock'],
+                helhet=category_ratings['helhet'],
+                bulle=category_ratings['bulle'],
                 )
             rating.save()
             
