@@ -11,3 +11,4 @@ whitenoise
 packaging
 sqlparse
 tzdata
+mysqlclient
