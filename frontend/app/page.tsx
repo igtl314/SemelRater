@@ -27,7 +27,6 @@ export default function Home() {
           <Spinner />
         </div>
       )}
-      <ThemeSwitch className="fixed top-4 right-4 z-50" />
       {semels.length > 0 ? (
         <>
           <Top3Semels semels={semels} />
