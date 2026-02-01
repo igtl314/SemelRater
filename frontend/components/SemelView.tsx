@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDisclosure } from "@heroui/modal";
 
-import { SemelModal } from "./SemelModal";
+import { ViewCommentsModal } from "./SemelModal";
 import { SemelCard } from "./SemelCard";
 import { CommentModal } from "./CommentModal";
 
@@ -54,7 +54,7 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
         />
       ))}
       {semelModalContent && (
-        <SemelModal
+        <ViewCommentsModal
           Semel={semelModalContent}
           SemelComments={comments}
           isOpen={isOpen}
