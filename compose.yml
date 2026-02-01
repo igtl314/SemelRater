@@ -1,4 +1,21 @@
 services:
+  db:
+    image: mariadb:11
+    container_name: semelrater-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-semelrater}
+      MYSQL_USER: ${DB_USER:-semelrater}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-semelrater}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: .
@@ -6,8 +23,19 @@ services:
     container_name: backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./data:/app/data
+    environment:
+      - DB_ENGINE=django.db.backends.mysql
+      - DB_NAME=${DB_NAME:-semelrater}
+      - DB_USER=${DB_USER:-semelrater}
+      - DB_PASSWORD=${DB_PASSWORD:-semelrater}
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME:-admin}
+      - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-admin@example.com}
+      - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-admin123}
+    depends_on:
+      db:
+        condition: service_healthy
   frontend:
     build:
       context: ./frontend
@@ -17,3 +45,6 @@ services:
       - "3005:3000"
     depends_on:
       - backend
+
+volumes:
+  mariadb_data:
