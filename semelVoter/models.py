@@ -16,10 +16,29 @@ class Semla(models.Model):
     def update_rating(self, new_rating):
         """
         Update the Semla rating based on the old and new ratings.
+        Handles both legacy single ratings and new category ratings.
+        
+        Args:
+            new_rating: Either an int (legacy) or a dict with category ratings
         """
         try:
             old_ratings = self.ratings.all()
-            self.rating = (sum([int(rating.rating) for rating in old_ratings]) + int(new_rating)) / (len(old_ratings) + 1)
+            
+            # Calculate scores for existing ratings
+            total = 0
+            for rating_obj in old_ratings:
+                total += rating_obj.get_average_rating()
+            
+            # Add the new rating
+            if isinstance(new_rating, dict):
+                # New category-based rating
+                new_avg = (new_rating['gradde'] + new_rating['mandelmassa'] + 
+                          new_rating['lock'] + new_rating['helhet'] + new_rating['bulle']) / 5
+            else:
+                # Legacy single rating
+                new_avg = int(new_rating)
+            
+            self.rating = (total + new_avg) / (len(old_ratings) + 1)
             self.save()
         except Exception as e:
             print(f"Error updating rating: {e}")
@@ -40,13 +59,25 @@ class SemlaImage(models.Model):
 
 class Ratings(models.Model):
     semla = models.ForeignKey(Semla, on_delete=models.CASCADE, related_name='ratings')
-    rating = models.IntegerField()
+    rating = models.IntegerField()  # Legacy field, kept for backward compatibility
     comment = models.TextField(null=True, blank=True)
     name = models.CharField(max_length=100, null=True, blank=True)
     date = models.DateField(default=django.utils.timezone.now)
+    # Category ratings (nullable for backward compatibility with legacy ratings)
+    gradde = models.IntegerField(null=True, blank=True)  # Cream
+    mandelmassa = models.IntegerField(null=True, blank=True)  # Almond paste
+    lock = models.IntegerField(null=True, blank=True)  # Lid
+    helhet = models.IntegerField(null=True, blank=True)  # Overall
+    bulle = models.IntegerField(null=True, blank=True)  # Bun
 
     def __str__(self):
         return f"{self.semla.bakery} - {self.rating}"
+
+    def get_average_rating(self):
+        """Calculate average from category ratings if available, else use legacy rating."""
+        if all([self.gradde, self.mandelmassa, self.lock, self.helhet, self.bulle]):
+            return (self.gradde + self.mandelmassa + self.lock + self.helhet + self.bulle) / 5
+        return self.rating
 
     @classmethod
     def get_semel_rating(cls, semla_id):

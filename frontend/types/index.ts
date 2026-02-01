@@ -27,6 +27,14 @@ export type SemelContextType = {
   refreshSemels: () => void;
 };
 
+export type CategoryRatings = {
+  gradde: number;      // Cream
+  mandelmassa: number; // Almond paste
+  lock: number;        // Lid
+  helhet: number;      // Overall
+  bulle: number;       // Bun
+};
+
 export type Rating = Comment & {
   date: string;
 };
@@ -35,6 +43,7 @@ export type Comment = {
   rating: number;
   semelId: number;
   name?: string;
+  categoryRatings?: CategoryRatings; // Optional for backward compatibility with legacy ratings
 };
 
 export type SemelRatingsFetch = {

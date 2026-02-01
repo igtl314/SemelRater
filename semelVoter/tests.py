@@ -875,7 +875,11 @@ class TestRateSemlaWithImage:
         response = client.post(
             f'/api/rate/{semla.id}',
             {
-                'rating': 4,
+                'gradde': 4,
+                'mandelmassa': 5,
+                'lock': 4,
+                'helhet': 4,
+                'bulle': 3,
                 'comment': 'Great semla!',
                 'image': image_file,
             }
@@ -898,7 +902,14 @@ class TestRateSemlaWithImage:
         
         response = client.post(
             f'/api/rate/{semla.id}',
-            {'rating': 5, 'comment': 'Excellent!'},
+            {
+                'gradde': 5,
+                'mandelmassa': 5,
+                'lock': 5,
+                'helhet': 5,
+                'bulle': 5,
+                'comment': 'Excellent!'
+            },
             content_type='application/json'
         )
         
@@ -925,7 +936,11 @@ class TestRateSemlaWithImage:
         response = client.post(
             f'/api/rate/{semla.id}',
             {
-                'rating': 3,
+                'gradde': 3,
+                'mandelmassa': 3,
+                'lock': 3,
+                'helhet': 3,
+                'bulle': 3,
                 'comment': 'Okay semla',
                 'image': image_file,
             }
@@ -963,7 +978,11 @@ class TestRateSemlaWithImage:
         response = client.post(
             f'/api/rate/{semla.id}',
             {
-                'rating': 4,
+                'gradde': 4,
+                'mandelmassa': 4,
+                'lock': 4,
+                'helhet': 4,
+                'bulle': 4,
                 'comment': 'Nice semla',
                 'image': image_file,
             }
@@ -975,6 +994,11 @@ class TestRateSemlaWithImage:
         assert Ratings.objects.filter(semla=semla).count() == 1
         rating = Ratings.objects.get(semla=semla)
         assert rating.rating == 4
+        assert rating.gradde == 4
+        assert rating.mandelmassa == 4
+        assert rating.lock == 4
+        assert rating.helhet == 4
+        assert rating.bulle == 4
         assert rating.comment == 'Nice semla'
         # No image should be created due to the error
         assert semla.images.count() == 0

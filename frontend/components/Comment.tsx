@@ -1,6 +1,14 @@
 import { Card, CardBody, CardHeader } from "@heroui/card";
 
-import { Rating } from "@/types";
+import { Rating, CategoryRatings } from "@/types";
+
+const CATEGORY_DISPLAY_NAMES: { key: keyof CategoryRatings; label: string }[] = [
+  { key: "gradde", label: "Grädde" },
+  { key: "mandelmassa", label: "MandelMassa" },
+  { key: "lock", label: "Lock" },
+  { key: "bulle", label: "Bulle" },
+  { key: "helhet", label: "Helhet" },
+];
 
 export function Comment({ comment }: { comment: Rating }) {
   const getInitials = (name?: string) => {
@@ -11,6 +19,16 @@ export function Comment({ comment }: { comment: Rating }) {
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  // Calculate average from category ratings if available
+  const getDisplayRating = () => {
+    if (comment.categoryRatings) {
+      const { gradde, mandelmassa, lock, helhet, bulle } = comment.categoryRatings;
+      const avg = (gradde + mandelmassa + lock + helhet + bulle) / 5;
+      return avg.toFixed(1);
+    }
+    return comment.rating;
   };
 
   return (
@@ -32,12 +50,24 @@ export function Comment({ comment }: { comment: Rating }) {
         </div>
         <div className="flex items-center gap-1">
           <span className="text-lg font-bold text-yellow-500">
-            {comment.rating}
+            {getDisplayRating()}
           </span>
           <span className="text-default-400 text-small">/ 5</span>
         </div>
       </CardHeader>
       <CardBody className="px-3 py-2 text-small text-default-600">
+        {comment.categoryRatings && (
+          <div className="mb-2 grid grid-cols-5 gap-2 text-xs">
+            {CATEGORY_DISPLAY_NAMES.map(({ key, label }) => (
+              <div key={key} className="flex flex-col items-center">
+                <span className="text-default-400">{label}</span>
+                <span className="font-semibold text-yellow-500">
+                  {comment.categoryRatings![key]}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
         <p>{comment.comment}</p>
       </CardBody>
     </Card>

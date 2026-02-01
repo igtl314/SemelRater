@@ -44,4 +44,4 @@ class CreateSemlaSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ratings
-        fields = ['comment', "rating", "date", "name"]
+        fields = ['comment', "rating", "date", "name", "gradde", "mandelmassa", "lock", "helhet", "bulle"]

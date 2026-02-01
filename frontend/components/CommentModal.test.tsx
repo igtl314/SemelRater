@@ -30,9 +30,36 @@ const mockContext = {
   error: null,
 };
 
+// Helper to fill all category ratings
+const fillCategoryRatings = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.type(screen.getByLabelText(/grädde/i), '5');
+  await user.type(screen.getByLabelText(/mandelmassa/i), '4');
+  await user.type(screen.getByLabelText(/lock/i), '3');
+  await user.type(screen.getByLabelText(/bulle/i), '4');
+  await user.type(screen.getByLabelText(/helhet/i), '5');
+};
+
 describe('CommentModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('should render all 5 category rating inputs', () => {
+    render(
+      <SemelContext.Provider value={mockContext}>
+        <CommentModal 
+          semel={mockSemel} 
+          isOpen={true} 
+          onOpenChange={() => {}} 
+        />
+      </SemelContext.Provider>
+    );
+
+    expect(screen.getByLabelText(/grädde/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/mandelmassa/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/lock/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/bulle/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/helhet/i)).toBeInTheDocument();
   });
 
   it('should render image upload input', () => {
@@ -102,7 +129,9 @@ describe('CommentModal', () => {
     expect(screen.getByText(/only jpeg, png, and webp/i)).toBeInTheDocument();
   });
 
-  it('should include image in form submission', async () => {
+  it('should include image and category ratings in form submission', async () => {
+    const user = userEvent.setup();
+    
     render(
       <SemelContext.Provider value={mockContext}>
         <CommentModal 
@@ -113,9 +142,8 @@ describe('CommentModal', () => {
       </SemelContext.Provider>
     );
 
-    // Fill in the form
-    const ratingInput = screen.getByLabelText(/rating/i);
-    fireEvent.change(ratingInput, { target: { value: '5' } });
+    // Fill in category ratings
+    await fillCategoryRatings(user);
 
     // Add image
     const imageInput = screen.getByLabelText(/image/i);
@@ -127,11 +155,17 @@ describe('CommentModal', () => {
 
     // Submit form
     const submitButton = screen.getByRole('button', { name: /add review/i });
-    fireEvent.click(submitButton);
+    await user.click(submitButton);
 
     // Wait for the async operation to complete
     await waitFor(() => {
-      expect(rateSemel).toHaveBeenCalledWith(1, 5, '', expect.any(File), '');
+      expect(rateSemel).toHaveBeenCalledWith(
+        1,
+        { gradde: 5, mandelmassa: 4, lock: 3, helhet: 5, bulle: 4 },
+        '',
+        expect.any(File),
+        ''
+      );
     });
   });
 
@@ -149,7 +183,7 @@ describe('CommentModal', () => {
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
   });
 
-  it('includes name in form submission', async () => {
+  it('includes name and category ratings in form submission', async () => {
     const user = userEvent.setup();
     
     vi.mocked(rateSemel).mockResolvedValue({
@@ -167,14 +201,20 @@ describe('CommentModal', () => {
       </SemelContext.Provider>
     );
 
-    await user.type(screen.getByLabelText(/rating/i), '5');
+    await fillCategoryRatings(user);
     await user.type(screen.getByLabelText(/comment/i), 'Great semla!');
     await user.type(screen.getByLabelText(/name/i), 'Erik Svensson');
     
     await user.click(screen.getByRole('button', { name: /add review/i }));
 
     await waitFor(() => {
-      expect(rateSemel).toHaveBeenCalledWith(1, 5, 'Great semla!', undefined, 'Erik Svensson');
+      expect(rateSemel).toHaveBeenCalledWith(
+        1,
+        { gradde: 5, mandelmassa: 4, lock: 3, helhet: 5, bulle: 4 },
+        'Great semla!',
+        undefined,
+        'Erik Svensson'
+      );
     });
   });
 
@@ -196,13 +236,19 @@ describe('CommentModal', () => {
       </SemelContext.Provider>
     );
 
-    await user.type(screen.getByLabelText(/rating/i), '4');
+    await fillCategoryRatings(user);
     await user.type(screen.getByLabelText(/comment/i), 'Nice!');
     
     await user.click(screen.getByRole('button', { name: /add review/i }));
 
     await waitFor(() => {
-      expect(rateSemel).toHaveBeenCalledWith(1, 4, 'Nice!', undefined, '');
+      expect(rateSemel).toHaveBeenCalledWith(
+        1,
+        { gradde: 5, mandelmassa: 4, lock: 3, helhet: 5, bulle: 4 },
+        'Nice!',
+        undefined,
+        ''
+      );
     });
   });
 });
