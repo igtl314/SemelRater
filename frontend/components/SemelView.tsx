@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useDisclosure } from "@heroui/modal";
 
-import { ViewCommentsModal } from "./SemelModal";
 import { SemelCard } from "./SemelCard";
 import { CommentModal } from "./CommentModal";
 
 import { useSemelComments } from "@/app/_actions/GetSemelComments";
 import { Semel, SemelRatingsFetch } from "@/types";
+import { ViewCommentsModal } from "./DetailsModal";
 
 export function SemelView({ semelArray }: { semelArray: Semel[] }) {
   const [semelModalContent, setSemelModalContent] = useState<Semel | null>(
