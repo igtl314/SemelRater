@@ -42,8 +42,8 @@ export default function Home() {
 function Top3Semels({ semels }: { semels: Semel[] }) {
   return (
     <div className=" grid grid-row-2 gap-4 border-b-2 border-b-gray-300 pb-4">
-      <p className="text-xl text-center">Top 3 Semlor</p>
-      <SemelView semelArray={semels.slice(0, 3)} />
+      <p className="text-xl text-center">Top 2 Semlor</p>
+      <SemelView semelArray={semels.slice(0, 2)} />
     </div>
   );
 }

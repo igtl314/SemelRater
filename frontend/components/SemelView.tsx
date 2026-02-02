@@ -4,8 +4,7 @@ import { useDisclosure } from "@heroui/modal";
 import { SemelCard } from "./SemelCard";
 import { CreateCommentModal } from "./CreateCommentModal";
 
-import { useSemelComments } from "@/app/_actions/GetSemelComments";
-import { Semel, SemelRatingsFetch } from "@/types";
+import { Semel } from "@/types";
 import { ViewCommentsModal } from "./DetailsModal";
 
 export function SemelView({ semelArray }: { semelArray: Semel[] }) {
@@ -21,16 +20,6 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
     onOpenChange: onCommentOpenChange,
   } = useDisclosure();
 
-  // Fetch comments for a specific Semel
-  const { ratings, isLoading, isError } = useSemelComments(
-    semelModalContent?.id || 0,
-  );
-
-  const comments: SemelRatingsFetch = {
-    ratings: semelModalContent ? ratings : [],
-    isLoading,
-    isError,
-  };
 
   // Function to handle the chosen Semel and open the modal
   const handleModalContent = (semel: Semel) => {
@@ -56,7 +45,6 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
       {semelModalContent && (
         <ViewCommentsModal
           Semel={semelModalContent}
-          SemelComments={comments}
           isOpen={isOpen}
           onOpenChange={onOpenChange}
         />

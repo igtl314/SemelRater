@@ -8,18 +8,26 @@ import { SemelImage } from "./SemelImage";
 import { Comment } from "./Comment";
 
 import { Semel, SemelRatingsFetch } from "@/types";
+import { useSemelComments } from "@/app/_actions/GetSemelComments";
 
 export function ViewCommentsModal({
   Semel,
   isOpen,
   onOpenChange,
-  SemelComments,
 }: {
   Semel: Semel;
   isOpen: boolean;
   onOpenChange: () => void;
-  SemelComments: SemelRatingsFetch;
 }) {
+    const { ratings, isLoading, isError } = useSemelComments(
+      Semel.id || 0,
+    );
+  
+    const comments: SemelRatingsFetch = {
+      ratings: Semel ? ratings : [],
+      isLoading,
+      isError,
+    };
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="5xl" scrollBehavior="inside">
       <ModalContent className="max-h-[90vh]">
@@ -70,16 +78,16 @@ export function ViewCommentsModal({
                 <div className="flex flex-col h-full">
                   <h3 className="text-xl font-semibold mb-3">Comments</h3>
                    <div className="flex-1 overflow-y-auto pr-2">
-                    {SemelComments.isLoading ? (
+                    {comments.isLoading ? (
                       <div className="flex justify-center items-center h-40">
                          <Spinner />
                       </div>
-                    ) : SemelComments.ratings?.length === 0 ? (
+                    ) : comments.ratings?.length === 0 ? (
                       <div className="text-center p-8 text-default-400">
                         <p>No comments yet. Be the first to share your thoughts!</p>
                       </div>
                     ) : (
-                      SemelComments.ratings?.map((comment, index) => (
+                      comments.ratings?.map((comment, index) => (
                         <Comment key={index} comment={comment} />
                       ))
                     )}
