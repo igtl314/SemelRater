@@ -9,7 +9,7 @@ vi.mock('@/app/actions/semel', () => ({
 }));
 
 import { rateSemel } from '@/app/actions/semel';
-import { CommentModal } from './CommentModal';
+import { CreateCommentModal } from './CreateCommentModal';
 
 const mockSemel = {
   id: 1,
@@ -47,7 +47,7 @@ describe('CommentModal', () => {
   it('should render all 5 category rating inputs', () => {
     render(
       <SemelContext.Provider value={mockContext}>
-        <CommentModal 
+        <CreateCommentModal 
           semel={mockSemel} 
           isOpen={true} 
           onOpenChange={() => {}} 
@@ -65,7 +65,7 @@ describe('CommentModal', () => {
   it('should render image upload input', () => {
     render(
       <SemelContext.Provider value={mockContext}>
-        <CommentModal 
+        <CreateCommentModal 
           semel={mockSemel} 
           isOpen={true} 
           onOpenChange={() => {}} 
@@ -83,7 +83,7 @@ describe('CommentModal', () => {
   it('should show image preview when file is selected', async () => {
     render(
       <SemelContext.Provider value={mockContext}>
-        <CommentModal 
+        <CreateCommentModal 
           semel={mockSemel} 
           isOpen={true} 
           onOpenChange={() => {}} 
@@ -108,7 +108,7 @@ describe('CommentModal', () => {
   it('should show validation error for invalid file type', async () => {
     render(
       <SemelContext.Provider value={mockContext}>
-        <CommentModal 
+        <CreateCommentModal 
           semel={mockSemel} 
           isOpen={true} 
           onOpenChange={() => {}} 
@@ -134,7 +134,7 @@ describe('CommentModal', () => {
     
     render(
       <SemelContext.Provider value={mockContext}>
-        <CommentModal 
+        <CreateCommentModal 
           semel={mockSemel} 
           isOpen={true} 
           onOpenChange={() => {}} 
@@ -172,7 +172,7 @@ describe('CommentModal', () => {
   it('renders name input field', () => {
     render(
       <SemelContext.Provider value={mockContext}>
-        <CommentModal
+        <CreateCommentModal
           isOpen={true}
           semel={mockSemel}
           onOpenChange={() => {}}
@@ -193,7 +193,7 @@ describe('CommentModal', () => {
 
     render(
       <SemelContext.Provider value={mockContext}>
-        <CommentModal
+        <CreateCommentModal
           isOpen={true}
           semel={mockSemel}
           onOpenChange={() => {}}
@@ -228,7 +228,7 @@ describe('CommentModal', () => {
 
     render(
       <SemelContext.Provider value={mockContext}>
-        <CommentModal
+        <CreateCommentModal
           isOpen={true}
           semel={mockSemel}
           onOpenChange={() => {}}
