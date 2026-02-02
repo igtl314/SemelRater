@@ -157,6 +157,7 @@ export function CreateCommentModal({
                 <Textarea
                   className={INPUT_CLASS}
                   label="Comment"
+                  required
                   name="comment"
                   placeholder="Write your comment here..."
                   rows={2}
@@ -167,7 +168,8 @@ export function CreateCommentModal({
                   className={INPUT_CLASS}
                   label="Name"
                   name="name"
-                  placeholder="Your name (optional)"
+                  placeholder="Your name"
+                  required
                   value={formData.name}
                   onChange={handleChange}
                 />

@@ -55,7 +55,7 @@ function SemelCreatorForm({ onSuccess, message, setMessage }: SemelCreatorFormPr
       setSelectedFile(null);
       return;
     }
-
+    console.log("MARCUS")
     const validationResult = validateImageFile(file);
     if (!validationResult.valid) {
       setImageError(validationResult.message);
