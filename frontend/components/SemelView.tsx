@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useDisclosure } from "@heroui/modal";
 
 import { SemelCard } from "./SemelCard";
-import { CommentModal } from "./CommentModal";
+import { CreateCommentModal } from "./CreateCommentModal";
 
 import { useSemelComments } from "@/app/_actions/GetSemelComments";
 import { Semel, SemelRatingsFetch } from "@/types";
@@ -62,7 +62,7 @@ export function SemelView({ semelArray }: { semelArray: Semel[] }) {
         />
       )}
       {semelModalContent && (
-        <CommentModal
+        <CreateCommentModal
           isOpen={isCommentOpen}
           semel={semelModalContent}
           onOpenChange={onCommentOpenChange}

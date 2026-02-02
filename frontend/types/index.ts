@@ -43,7 +43,13 @@ export type Comment = {
   rating: number;
   semelId: number;
   name?: string;
-  categoryRatings?: CategoryRatings; // Optional for backward compatibility with legacy ratings
+  // Category ratings (flattened)
+  gradde?: number;
+  mandelmassa?: number;
+  lock?: number;
+  helhet?: number;
+  bulle?: number;
+  categoryRatings?: CategoryRatings; // keeping for backward compatibility if needed, but primary structure is flat
 };
 
 export type SemelRatingsFetch = {

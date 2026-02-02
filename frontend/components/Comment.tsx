@@ -23,6 +23,13 @@ export function Comment({ comment }: { comment: Rating }) {
 
   // Calculate average from category ratings if available
   const getDisplayRating = () => {
+    // Check for flattened ratings first
+    if (comment.gradde !== undefined) {
+      const { gradde = 0, mandelmassa = 0, lock = 0, helhet = 0, bulle = 0 } = comment;
+      const avg = (gradde + mandelmassa + lock + helhet + bulle) / 5;
+      return avg.toFixed(1);
+    }
+    // Fallback to nested object if it exists (legacy)
     if (comment.categoryRatings) {
       const { gradde, mandelmassa, lock, helhet, bulle } = comment.categoryRatings;
       const avg = (gradde + mandelmassa + lock + helhet + bulle) / 5;
@@ -30,6 +37,8 @@ export function Comment({ comment }: { comment: Rating }) {
     }
     return comment.rating;
   };
+
+  const hasCategoryRatings = comment.categoryRatings || comment.gradde !== undefined;
 
   return (
     <Card className="mb-3 w-full" shadow="sm">
@@ -56,16 +65,24 @@ export function Comment({ comment }: { comment: Rating }) {
         </div>
       </CardHeader>
       <CardBody className="px-3 py-2 text-small text-default-600">
-        {comment.categoryRatings && (
-          <div className="mb-2 grid grid-cols-5 gap-2 text-xs">
-            {CATEGORY_DISPLAY_NAMES.map(({ key, label }) => (
-              <div key={key} className="flex flex-col items-center">
-                <span className="text-default-400">{label}</span>
-                <span className="font-semibold text-yellow-500">
-                  {comment.categoryRatings![key]}
-                </span>
-              </div>
-            ))}
+        {hasCategoryRatings && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {CATEGORY_DISPLAY_NAMES.map(({ key, label }) => {
+              // Resolve value from flattened structure or nested object
+              // key is specific to rating numbers, so accessing comment[key] works if Comment has these fields
+              const value = comment[key] ?? comment.categoryRatings?.[key];
+              
+              if (value === undefined) return null;
+               
+              return (
+                <div key={key} className="flex items-center gap-1 text-tiny italic">
+                  <span className="text-default-400">{label}:</span>
+                  <span className="font-medium text-yellow-500">
+                    {value}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
         <p>{comment.comment}</p>
