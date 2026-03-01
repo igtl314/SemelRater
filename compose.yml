@@ -11,16 +11,18 @@ services:
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test:
+        - CMD
+        - healthcheck.sh
+        - "--connect"
+        - "--innodb_initialized"
       interval: 10s
       timeout: 5s
       retries: 5
 
   backend:
     restart: unless-stopped
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/igtl314/semelrater-backend:latest
     container_name: backend
     ports:
       - "8000:8000"
@@ -39,9 +41,7 @@ services:
         condition: service_healthy
   frontend:
     restart: unless-stopped
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/igtl314/semelrater-frontend:latest
     container_name: frontend
     ports:
       - "3005:3000"
@@ -49,4 +49,4 @@ services:
       - backend
 
 volumes:
-  mariadb_data:
+  mariadb_data: null
