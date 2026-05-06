@@ -7,6 +7,8 @@ export function SemelImage({
   src: string;
   className?: string;
 }) {
+  if (!src) return null;
+
   return (
     <Image
       alt={src}

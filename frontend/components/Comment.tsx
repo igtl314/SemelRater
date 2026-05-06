@@ -1,92 +1,111 @@
-import { Card, CardBody, CardHeader } from "@heroui/card";
+import type { CSSProperties } from "react";
 
 import { Rating, CategoryRatings } from "@/types";
 
-const CATEGORY_DISPLAY_NAMES: { key: keyof CategoryRatings; label: string }[] = [
+const CATEGORIES: { key: keyof CategoryRatings; label: string }[] = [
   { key: "gradde", label: "Grädde" },
-  { key: "mandelmassa", label: "MandelMassa" },
+  { key: "mandelmassa", label: "Mandelmassa" },
   { key: "lock", label: "Lock" },
   { key: "bulle", label: "Bulle" },
   { key: "helhet", label: "Helhet" },
 ];
 
+function getInitials(name?: string) {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function getDisplayRating(comment: Rating): number {
+  if (comment.gradde !== undefined) {
+    const { gradde = 0, mandelmassa = 0, lock = 0, helhet = 0, bulle = 0 } = comment;
+    return (gradde + mandelmassa + lock + helhet + bulle) / 5;
+  }
+  if (comment.categoryRatings) {
+    const { gradde, mandelmassa, lock, helhet, bulle } = comment.categoryRatings;
+    return (gradde + mandelmassa + lock + helhet + bulle) / 5;
+  }
+  return comment.rating;
+}
+
+function getScoreStyle(score: number) {
+  if (score >= 4.0) return { text: "text-yellow-500", chip: "text-yellow-500 bg-yellow-500/[0.12]" };
+  if (score >= 3.0) return { text: "text-orange-400", chip: "text-orange-400 bg-orange-400/[0.12]" };
+  return { text: "text-red-400", chip: "text-red-400 bg-red-400/[0.12]" };
+}
+
+function getRatingBarStyle(score: number): CSSProperties {
+  const pct = Math.min((score / 5) * 100, 100);
+  let background: string;
+  if (score >= 4.0) background = "linear-gradient(to right, #EAB308, #F59E0B)";
+  else if (score >= 3.0) background = "linear-gradient(to right, #F59E0B, #F97316)";
+  else background = "linear-gradient(to right, #F97316, #EF4444)";
+  return { width: `${pct}%`, background };
+}
+
 export function Comment({ comment }: { comment: Rating }) {
-  const getInitials = (name?: string) => {
-    if (!name) return "?";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  // Calculate average from category ratings if available
-  const getDisplayRating = () => {
-    // Check for flattened ratings first
-    if (comment.gradde !== undefined) {
-      const { gradde = 0, mandelmassa = 0, lock = 0, helhet = 0, bulle = 0 } = comment;
-      const avg = (gradde + mandelmassa + lock + helhet + bulle) / 5;
-      return avg.toFixed(1);
-    }
-    // Fallback to nested object if it exists (legacy)
-    if (comment.categoryRatings) {
-      const { gradde, mandelmassa, lock, helhet, bulle } = comment.categoryRatings;
-      const avg = (gradde + mandelmassa + lock + helhet + bulle) / 5;
-      return avg.toFixed(1);
-    }
-    return comment.rating;
-  };
-
+  const score = getDisplayRating(comment);
+  const colors = getScoreStyle(score);
   const hasCategoryRatings = comment.categoryRatings || comment.gradde !== undefined;
 
   return (
-    <Card className="mb-3 w-full" shadow="sm">
-      <CardHeader className="justify-between pb-0">
-        <div className="flex gap-3">
-          {/* Avatar fallback since @heroui/avatar is not installed */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-default-200 bg-default-100">
-            <span className="text-tiny font-medium text-default-600">
+    <div className="w-full mb-3 border border-zinc-800 rounded-[14px] overflow-hidden bg-zinc-900 dark:bg-zinc-900 dark:border-zinc-800">
+      {/* Rating bar */}
+      <div className="h-1" style={getRatingBarStyle(score)} />
+
+      {/* Card body */}
+      <div className="p-4 flex flex-col gap-2.5">
+        {/* Top row: avatar + name/date + score */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 shrink-0 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+            <span className="text-[11px] font-semibold text-zinc-400 font-mono">
               {getInitials(comment.name)}
             </span>
           </div>
-          <div className="flex flex-col gap-1 items-start justify-center">
-            <h4 className="text-small font-semibold leading-none text-default-600">
-              {comment.name || "Unknown"}
-            </h4>
-            <span className="text-tiny text-default-400">{comment.date}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-zinc-100 truncate">
+              {comment.name || "Anonymous"}
+            </p>
+            <p className="text-[10px] text-zinc-600 mt-0.5">{comment.date}</p>
+          </div>
+          <div className={`text-2xl font-bold leading-none ${colors.text}`}>
+            {score.toFixed(1)}
+            <span className="text-[11px] text-zinc-600 font-normal"> /5</span>
           </div>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="text-lg font-bold text-yellow-500">
-            {getDisplayRating()}
-          </span>
-          <span className="text-default-400 text-small">/ 5</span>
-        </div>
-      </CardHeader>
-      <CardBody className="px-3 py-2 text-small text-default-600">
+
+        {/* Category grid */}
         {hasCategoryRatings && (
-          <div className="mb-2 flex flex-wrap gap-2">
-            {CATEGORY_DISPLAY_NAMES.map(({ key, label }) => {
-              // Resolve value from flattened structure or nested object
-              // key is specific to rating numbers, so accessing comment[key] works if Comment has these fields
-              const value = comment[key] ?? comment.categoryRatings?.[key];
-              
-              if (value === undefined) return null;
-               
+          <div className="grid grid-cols-5 gap-1 bg-zinc-800 rounded-[10px] px-2 py-2.5">
+            {CATEGORIES.map(({ key, label }) => {
+              const val = comment[key] ?? comment.categoryRatings?.[key];
+              if (val === undefined) return null;
+              const catColors = getScoreStyle(val);
               return (
-                <div key={key} className="flex items-center gap-1 text-tiny italic">
-                  <span className="text-default-400">{label}:</span>
-                  <span className="font-medium text-yellow-500">
-                    {value}
-                  </span>
+                <div key={key} className="flex flex-col items-center gap-0.5">
+                  <div
+                    className={`text-[15px] font-bold w-8 h-7 flex items-center justify-center rounded-md ${catColors.chip}`}
+                  >
+                    {val}
+                  </div>
+                  <div className="text-[9px] text-zinc-600 text-center leading-tight">{label}</div>
                 </div>
               );
             })}
           </div>
         )}
-        <p>{comment.comment}</p>
-      </CardBody>
-    </Card>
+
+        {/* Comment text */}
+        {comment.comment && (
+          <p className="text-[12px] text-zinc-400 leading-relaxed border-l-2 border-zinc-700 pl-2.5 italic">
+            {comment.comment}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

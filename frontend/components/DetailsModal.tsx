@@ -56,20 +56,32 @@ export function ViewCommentsModal({
                   
                   <div className="grid grid-cols-2 gap-4 p-4 bg-default-50 rounded-lg">
                      <div>
-                        <p className="text-tiny text-default-500 uppercase font-bold">Price</p>
+                        <p className="text-tiny text-default-500 uppercase font-bold mb-1">Price</p>
                         <p className="font-semibold">{Semel.price}</p>
                      </div>
                      <div>
-                        <p className="text-tiny text-default-500 uppercase font-bold">Type</p>
-                        <p className="font-semibold">{Semel.kind}</p>
+                        <p className="text-tiny text-default-500 uppercase font-bold mb-1">Type</p>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                          {Semel.kind}
+                        </span>
                      </div>
                      <div>
-                        <p className="text-tiny text-default-500 uppercase font-bold">Vegan</p>
-                        <p className="font-semibold">{Semel.vegan ? "Yes" : "No"}</p>
+                        <p className="text-tiny text-default-500 uppercase font-bold mb-1">Diet</p>
+                        {Semel.vegan ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-green-500/15 text-green-500 text-xs font-semibold">
+                            Vegan
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-xs font-semibold">
+                            Non-vegan
+                          </span>
+                        )}
                      </div>
                       <div>
-                        <p className="text-tiny text-default-500 uppercase font-bold">Rating</p>
-                        <p className="font-semibold text-yellow-500">{Semel.rating}/5</p>
+                        <p className="text-tiny text-default-500 uppercase font-bold mb-1">Rating</p>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-yellow-500/15 text-yellow-500 text-sm font-bold">
+                          ★ {Semel.rating}/5
+                        </span>
                      </div>
                   </div>
                 </div>
