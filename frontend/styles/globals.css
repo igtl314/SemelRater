@@ -1,3 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@source "../node_modules/@heroui/theme/dist";
+@plugin "@heroui/theme/plugin";
+
+@variant dark (&:is(.dark *));
+
+@theme {
+  --font-family-sans: var(--font-sans);
+  --font-family-mono: var(--font-mono);
+}
