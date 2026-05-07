@@ -26,7 +26,7 @@ const mockSemel = {
 const mockContext = {
   semels: [mockSemel],
   refreshSemels: vi.fn(),
-  loading: false,
+  isLoading: false,
   error: null,
 };
 
